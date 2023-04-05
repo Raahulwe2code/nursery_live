@@ -204,6 +204,7 @@ export async function search_product(req, res) {
         " OFFSET " +
         offset +
         " ",
+
       (err, rows) => {
         if (err) {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
