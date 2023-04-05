@@ -197,6 +197,7 @@ export async function search_product(req, res) {
       var offset = 0;
     }
     console.log("limit--" + limit);
+
     console.log("offset--" + offset);
     connection.query(
       "SELECT * FROM `product` where 1 order BY name Desc LIMIT " +
