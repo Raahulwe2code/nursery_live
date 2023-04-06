@@ -5,12 +5,14 @@ import {
   getalluser,
   update_user,
   userByid,
+  user_search,
 } from "../controllers/userController.js";
 
 const userRouter = express.Router();
 
 userRouter.post("/add_user", add_user);
 userRouter.get("/all_user", getalluser);
+userRouter.get("/user_search", user_search);
 userRouter.get("/all_user/:id", userByid);
 userRouter.put("/update_user/:id", update_user);
 userRouter.delete("/delete_user/:id", delete_user);
