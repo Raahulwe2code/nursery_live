@@ -5,6 +5,11 @@ export async function addproduct(req, res) {
   var {
     vendor_id,
     name,
+    seo_tag,
+    brand,
+    quantity,
+    unit,
+    product_stock_quantity,
     price,
     image,
     review,
@@ -21,40 +26,43 @@ export async function addproduct(req, res) {
   } = req.body;
   console.log("body--" + JSON.stringify(req.body));
   if (req.file) {
+
     image = "http://localhost:5000/public/product_images/" + req.file.filename;
+  } else {
+    image = "no image"
   }
   connection.query(
-    ' INSERT INTO `product` (`vendor_id`,`name`,`price`,`image`,`gst`,`cgst`,`sgst`,`category`,`is_active`,`review`,`discount`,`rating`,`description`,`is_deleted`,`status`) values ("' +
-      vendor_id +
-      '","' +
-      name +
-      '","' +
-      price +
-      '","' +
-      image +
-      '" ,"' +
-      gst +
-      '","' +
-      cgst +
-      '","' +
-      sgst +
-      '","' +
-      category +
-      '","' +
-      is_active +
-      '","' +
-      review +
-      '","' +
-      discount +
-      '", "' +
-      rating +
-      '","' +
-      description +
-      '","' +
-      is_deleted +
-      '","' +
-      status +
-      '") ',
+    ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`image`,`gst`,`cgst`,`sgst`,`category`,`is_active`,`review`,`discount`,`rating`,`description`,`is_deleted`,`status`) values ("' +
+    vendor_id +
+    '","' +
+    name +
+    '","' + seo_tag + '","' + brand + '","' + quantity + '","' + unit + '","' + product_stock_quantity + '","' +
+    price +
+    '","' +
+    image +
+    '" ,"' +
+    gst +
+    '","' +
+    cgst +
+    '","' +
+    sgst +
+    '","' +
+    category +
+    '","' +
+    is_active +
+    '","' +
+    review +
+    '","' +
+    discount +
+    '", "' +
+    rating +
+    '","' +
+    description +
+    '","' +
+    is_deleted +
+    '","' +
+    status +
+    '") ',
     (err, result) => {
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
@@ -70,7 +78,7 @@ export async function getallProduct(req, res) {
     if (err) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "someting went wron" });
+        .json({ message: "someting went wrong" });
     } else {
       res.status(StatusCodes.OK).json(result);
     }
@@ -96,6 +104,11 @@ export async function updtateProductById(req, res) {
   let {
     vendor_id,
     name,
+    seo_tag,
+    brand,
+    quantity,
+    unit,
+    product_stock_quantity,
     price,
     image,
     review,
@@ -113,45 +126,20 @@ export async function updtateProductById(req, res) {
 
   let id = req.params.id;
 
-  res.status(200).send(JSON.stringify(req.body));
+ console.log("data--"+JSON.stringify(req.body))
 
   if (req.file) {
     image = "http://localhost:5000/public/product_images/" + req.file.filename;
   }
   connection.query(
-    "update plants set name='" +
-      name +
-      "' , price='" +
-      price +
-      "', image='" +
-      image +
-      "', review='" +
-      review +
-      "', discount='" +
-      discount +
-      "' , rating='" +
-      rating +
-      "' , description='" +
-      description +
-      "' , category='" +
-      category +
-      "',vendor_id='" +
-      vendor_id +
-      "', gst='" +
-      gst +
-      "' sgst='" +
-      sgst +
-      "', cgst= '" +
-      cgst +
-      "', is_deleted='" +
-      is_deleted +
-      "', is_active='" +
-      is_active +
-      "' , status='" +
-      status +
-      "' where id='" +
-      id +
-      "' ",
+    "update `product` set name='"+
+    name+"',seo_tag='"+seo_tag+"',brand='"+brand+"',quantity='"+quantity+"',unit='"+unit+"',product_stock_quantity='"+product_stock_quantity+"',price='" +
+    price+"',image='"+image+"',review='"+review+"', discount='"+discount+"' ,rating='"+rating+"',description='"+description+"' ,category='"+category+"',vendor_id='"+vendor_id+"',gst='"+gst+"',sgst='"+sgst+"', cgst= '"+cgst +"', is_deleted='"+is_deleted +"',is_active='"+is_active +
+    "' ,status='" +
+    status +
+    "' where id='" +
+    id +
+    "' ",
     (err, result) => {
       if (err) {
         res.status(500).send(err);
@@ -176,7 +164,7 @@ export async function deleteById(req, res) {
 }
 
 export async function search_product(req, res) {
-  var { price_from, price_to, category, rating, search } = req.body;
+  var { price_from, price_to, category, rating, search, brand, seo_tag, vendor_id } = req.body;
 
   // var query_string = "select * from product  where ";
 
@@ -185,7 +173,10 @@ export async function search_product(req, res) {
     category == "" &&
     price_to == "" &&
     price_from == "" &&
-    rating == ""
+    rating == "" &&
+    brand =="" &&
+    seo_tag == "" &&
+    vendor_id == ""
   ) {
     var pg = req.query;
     var numRows;
@@ -248,7 +239,10 @@ export async function search_product(req, res) {
       category == "" &&
       price_to == "" &&
       price_from == "" &&
-      rating == ""
+      rating == "" &&
+      brand == "" &&
+      seo_tag == "" &&
+      vendor_id == ""
     ) {
       search_string += ' name LIKE "%' + search + '%" ';
     }
@@ -258,7 +252,10 @@ export async function search_product(req, res) {
       category !== "" &&
       price_to == "" &&
       price_from == "" &&
-      rating == ""
+      rating == "" &&
+      brand == "" &&
+      seo_tag == "" &&
+      vendor_id == ""
     ) {
       search_string += '`category` LIKE "%' + category + '%" ';
     }
@@ -268,7 +265,10 @@ export async function search_product(req, res) {
       category == "" &&
       price_to == "" &&
       price_from == "" &&
-      rating !== ""
+      rating !== "" &&
+      brand == "" &&
+      seo_tag == "" &&
+      vendor_id == ""
     ) {
       search_string += '`rating` LIKE "%' + rating + '%" ';
     }
@@ -278,27 +278,75 @@ export async function search_product(req, res) {
       price_from !== "" &&
       search == "" &&
       category == "" &&
-      rating == ""
+      rating == "" &&
+      brand == "" &&
+      seo_tag == "" &&
+      vendor_id == ""
     ) {
       search_string +=
         '`price` BETWEEN "' + price_from + '" AND "' + price_to + '" ';
     }
 
+
+
+
+    if (
+      search == "" &&
+      category == "" &&
+      price_to == "" &&
+      price_from == "" &&
+      rating == "" &&
+      brand !== "" &&
+      seo_tag == "" &&
+      vendor_id == ""
+    ) {
+      search_string += '`brand` LIKE "%' + brand + '%" ';
+    }
+
+
+
+    if (
+      search == "" &&
+      category == "" &&
+      price_to == "" &&
+      price_from == "" &&
+      rating == "" &&
+      brand == "" &&
+      seo_tag !== "" &&
+      vendor_id == ""
+    ) {
+      search_string += '`seo_tag` LIKE "%' + seo_tag + '%" ';
+    }
+
+
+    if (
+      search == "" &&
+      category == "" &&
+      price_to == "" &&
+      price_from == "" &&
+      rating == "" &&
+      brand == "" &&
+      seo_tag == "" &&
+      vendor_id !== ""
+    ) {
+      search_string += '`vendor_id` LIKE "%' + vendor_id + '%" ';
+    }
+
+
+
+
+
     if (
       search !== "" &&
       category !== "" &&
       price_to !== "" &&
       price_from !== "" &&
-      rating !== ""
+      rating !== "" &&
+      brand !== "" &&
+      seo_tag !== "" &&
+      vendor_id !== ""
     ) {
-      search_string +=
-        'name LIKE "%' +
-        search +
-        '%" AND`category` LIKE "%' +
-        category +
-        '%" AND  `rating` LIKE "%' +
-        rating +
-        '%" AND `price` BETWEEN "' +
+      search_string +='name LIKE "%'+search +'%" AND`category` LIKE "%'+category +'%" AND  `rating` LIKE "%' +rating +'%" AND `seo_tag` LIKE "%'+seo_tag+'%" AND `brand` LIKE "%'+brand+'%" AND `vendor_id` LIKE "%'+vendor_id+'%" AND `price` BETWEEN "' +
         price_from +
         '" AND "' +
         price_to +
@@ -310,7 +358,10 @@ export async function search_product(req, res) {
       category !== "" &&
       price_to !== "" &&
       price_from !== "" &&
-      rating !== ""
+      rating !== "" &&
+      brand !== "" &&
+      seo_tag !== "" &&
+      vendor_id !== ""
     ) {
       search_string +=
         'name LIKE "%' +
@@ -319,7 +370,7 @@ export async function search_product(req, res) {
         category +
         '%" AND  `rating` LIKE "%' +
         rating +
-        '%" AND `price` BETWEEN "' +
+        '%"   AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%"  AND `price` BETWEEN "' +
         price_from +
         '" AND "' +
         price_to +
@@ -331,7 +382,10 @@ export async function search_product(req, res) {
       category == "" &&
       price_to !== "" &&
       price_from !== "" &&
-      rating !== ""
+      rating !== "" &&
+      brand !== "" &&
+      seo_tag !== "" &&
+      vendor_id !== ""
     ) {
       search_string +=
         'name LIKE "%' +
@@ -340,7 +394,7 @@ export async function search_product(req, res) {
         category +
         '%" AND  `rating` LIKE "%' +
         rating +
-        '%" AND `price` BETWEEN "' +
+        '%" AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%" AND `price` BETWEEN "' +
         price_from +
         '" AND "' +
         price_to +
@@ -352,7 +406,10 @@ export async function search_product(req, res) {
       category == "" &&
       price_to !== "" &&
       price_from !== "" &&
-      rating !== ""
+      rating !== "" &&
+      brand !== "" &&
+      seo_tag !== "" &&
+      vendor_id !== ""
     ) {
       search_string +=
         'name LIKE "%' +
@@ -361,7 +418,7 @@ export async function search_product(req, res) {
         category +
         '%" AND  `rating` LIKE "%' +
         rating +
-        '%" AND `price` BETWEEN "' +
+        '%"  AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%"  AND `price` BETWEEN "' +
         price_from +
         '" AND "' +
         price_to +
@@ -373,7 +430,10 @@ export async function search_product(req, res) {
       category == "" &&
       price_to !== "" &&
       price_from !== "" &&
-      rating == ""
+      rating !== "" &&
+      brand !== "" &&
+      seo_tag !== "" &&
+      vendor_id !== ""
     ) {
       search_string +=
         'name LIKE "%' +
@@ -382,7 +442,7 @@ export async function search_product(req, res) {
         category +
         '%" AND  `rating` LIKE "%' +
         rating +
-        '%" AND `price` BETWEEN "' +
+        '%"  AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%" AND `price` BETWEEN "' +
         price_from +
         '" AND "' +
         price_to +
@@ -406,13 +466,13 @@ export async function search_product(req, res) {
         } else {
           numRows = results[0].numRows;
           numPages = Math.ceil(numRows / numPerPage);
-
+console.log("-----query"+search_string)
           connection.query(
             "SELECT * FROM product where " +
-              search_string +
-              " LIMIT " +
-              limit +
-              "",
+            search_string +
+            " LIMIT " +
+            limit +
+            "",
             (err, results) => {
               if (err) {
                 //console.log(err)

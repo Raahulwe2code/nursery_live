@@ -38,11 +38,11 @@ const upload = multer({ storage: storage });
 const productRouter = express.Router();
 
 productRouter.post("/addProduct", upload.single("image"), addproduct);
-productRouter.post(
-  "/getproduct/:id",
-  upload.single("image"),
-  updtateProductById
-);
+productRouter.put("/getproduct/:id",upload.single("image"),updtateProductById);
+
+
+
+
 
 productRouter.get("/getproduct", getallProduct);
 productRouter.get("/getproduct/:id", getProductbyId);
