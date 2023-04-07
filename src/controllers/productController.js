@@ -164,9 +164,107 @@ export async function deleteById(req, res) {
 }
 
 export async function search_product(req, res) {
-  var { price_from, price_to, category, rating, search, brand, seo_tag, vendor_id } = req.body;
+  var { price_from, price_to} = req.body;
 
   // var query_string = "select * from product  where ";
+  let search_obj = Object.keys(req.body)
+  var search_string = "where ";
+  
+  console.log(search_obj)
+if(price_from!=""&&price_to!=""){
+  search_string+= '(`price` BETWEEN "'+price_from+'" AND "'+price_to+'") AND '
+}
+
+  for(var i=2;i<=search_obj.length-1;i++){
+    if(i==2){
+      if(req.body[search_obj[i]]!=""){
+        search_string+= `name LIKE "%${req.body[search_obj[i]]}%" AND `
+      }
+    }else{
+      if(req.body[search_obj[i]]!=""){
+        search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND `
+      }
+    }
+    if(i===search_obj.length-1){
+      search_string= search_string.substring(0, search_string.length-4);
+    }
+  }
+console.log(search_string)
+var pg = req.query;
+var numRows;
+
+var numPerPage = pg.per_page;
+var page = parseInt(pg.page, pg.per_page) || 0;
+var numPages;
+var skip = page * numPerPage;
+// Here we compute the LIMIT parameter for MySQL query
+var limit = skip + "," + numPerPage;
+
+connection.query(
+  "SELECT count(*) as numRows FROM product",
+  (err, results) => {
+    if (err) {
+    } else {
+      numRows = results[0].numRows;
+      numPages = Math.ceil(numRows / numPerPage);
+console.log("SELECT * FROM product " +search_string+" LIMIT " +limit +"")
+      connection.query(
+        "SELECT * FROM product " +
+        search_string +
+        " LIMIT " +
+        limit +
+        "",
+        (err, results) => {
+          if (err) {
+            //console.log(err)
+            res.status(502).send(err);
+          } else {
+            // //console.log("_____")
+            var responsePayload = {
+              results: results,
+            };
+            if (page < numPages) {
+              responsePayload.pagination = {
+                current: page,
+                perPage: numPerPage,
+                previous: page > 0 ? page - 1 : undefined,
+                next: page < numPages - 1 ? page + 1 : undefined,
+              };
+            } else
+              responsePayload.pagination = {
+                err:
+                  "queried page " +
+                  page +
+                  " is >= to maximum page number " +
+                  numPages,
+              };
+            res.status(200).send(responsePayload);
+          }
+        }
+      );
+    }
+  }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+return false
+
+
 
   if (
     search == "" &&
@@ -507,14 +605,5 @@ console.log("-----query"+search_string)
       }
     );
 
-    // var sql_query = "SELECT * FROM product where " + search_string;
-    // console.log("--" + sql_query);
-    // connection.query(sql_query, (err, rows) => {
-    //   if (err) {
-    //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
-    //   } else {
-    //     res.status(StatusCodes.OK).json(rows);
-    //   }
-    // });
   }
 }

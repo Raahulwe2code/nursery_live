@@ -48,5 +48,5 @@ productRouter.get("/getproduct", getallProduct);
 productRouter.get("/getproduct/:id", getProductbyId);
 
 productRouter.delete("/delete_product/:id", deleteById);
-productRouter.get("/search", search_product);
+productRouter.post("/search", search_product);
 export default productRouter;
