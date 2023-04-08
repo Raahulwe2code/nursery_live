@@ -166,9 +166,18 @@ export async function deleteById(req, res) {
 export async function search_product(req, res) {
   var { price_from, price_to} = req.body;
 
+  // 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user + '") FROM products  AND '
+
+
   // var query_string = "select * from product  where ";
   let search_obj = Object.keys(req.body)
-  var search_string = "where ";
+  console.log(req.headers.user)
+  if(req.headers.user!=""&&req.headers.user!=undefined){
+    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "'+req.headers.user+'") AS cart FROM product where ';
+  }else{
+    var search_string = 'SELECT * FROM product where ';
+  }
+
   
   console.log(search_obj)
 if(price_from!=""&&price_to!=""){
@@ -178,15 +187,15 @@ if(price_from!=""&&price_to!=""){
   for(var i=2;i<=search_obj.length-1;i++){
     if(i==2){
       if(req.body[search_obj[i]]!=""){
-        search_string+= `name LIKE "%${req.body[search_obj[i]]}%" AND `
+        search_string+= `name LIKE "%${req.body[search_obj[i]]}%" AND   `
       }
     }else{
       if(req.body[search_obj[i]]!=""){
-        search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND `
+        search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
       }
     }
     if(i===search_obj.length-1){
-      search_string= search_string.substring(0, search_string.length-4);
+      search_string= search_string.substring(0, search_string.length-6);
     }
   }
 console.log(search_string)
@@ -207,13 +216,8 @@ connection.query(
     } else {
       numRows = results[0].numRows;
       numPages = Math.ceil(numRows / numPerPage);
-console.log("SELECT * FROM product " +search_string+" LIMIT " +limit +"")
-      connection.query(
-        "SELECT * FROM product " +
-        search_string +
-        " LIMIT " +
-        limit +
-        "",
+console.log(""+search_string+" LIMIT " +limit + "")
+      connection.query(""+search_string+" LIMIT " +limit + "",
         (err, results) => {
           if (err) {
             //console.log(err)

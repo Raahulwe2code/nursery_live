@@ -2,15 +2,15 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function add_to_cart(req, res) {
-  var { user_id, product_id, quantity } = req.body;
+ var {user_id,product_id,cart_product_quantity}= req.body;
 
   connection.query(
-    "insert into cart (`user_id`, `product_id`,`quantity` )  VALUES ('" +
+    "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
       user_id +
       "', '" +
       product_id +
       "','" +
-      quantity +
+      cart_product_quantity +
       "')",
     (err, rows) => {
       if (err) {
@@ -24,8 +24,22 @@ export async function add_to_cart(req, res) {
   );
 }
 
-export async function cart_list(req, res) {
-  connection.query("select * from cart ", (err, rows) => {
+export  function cart_list(req, res) {
+var str_cart=""
+var {user_id,for_}=req.body
+if(for_=='admin'){
+  if(user_id!=''){
+    str_cart = "select * from cart_view where user_id='"+user_id+"'"
+  }else{
+    str_cart = "select * from cart_view"
+  }
+}else{
+  if(user_id!=''){
+    str_cart = "select * from cart_view where user_id='"+user_id+"'"
+  }
+}
+console.log(str_cart)
+  connection.query(str_cart, (err, rows) => {
     if (err) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -52,20 +66,11 @@ export async function cartById(req, res) {
   );
 }
 export async function cart_update(req, res) {
-  var { user_id, product_id, quantity } = req.body;
+  var { user_id, product_id, cart_product_quantity } = req.body;
   const id = req.params.id;
   connection.query(
-    "update cart set `user_id`='" +
-      user_id +
-      "', product_id='" +
-      product_id +
-      "', quantity='" +
-      quantity +
-      "' where id ='" +
-      id +
-      "' ",
-    (err, rows) => {
-      if (err) {
+    "update cart set product_id='"+product_id+"',quantity='"+cart_product_quantity+"' where id ='"+id+"' AND user_id='"+user_id+"'",(err, rows) => {
+      if(err) {
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
@@ -77,9 +82,9 @@ export async function cart_update(req, res) {
 }
 
 export async function cart_delete(req, res) {
-  const id = req.params.id;
+  const {id,user_id} = req.body
 
-  connection.query("delete from cart where id ='" + id + "' ", (err, rows) => {
+  connection.query("delete from cart where id ='" + id + "' AND user_id='"+user_id+"'", (err, rows) => {
     if (err) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
     } else {

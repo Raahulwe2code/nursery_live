@@ -10,7 +10,7 @@ import {
   search_product,
   updtateProductById,
 } from "../controllers/productController.js";
-
+import {admin_auth} from '../../middleware/auth.js'
 const app = express();
 app.use(bodyParser.json());
 
@@ -37,7 +37,7 @@ const upload = multer({ storage: storage });
 
 const productRouter = express.Router();
 
-productRouter.post("/addProduct", upload.single("image"), addproduct);
+productRouter.post("/addProduct", upload.single("image"),admin_auth, addproduct);
 productRouter.put("/getproduct/:id",upload.single("image"),updtateProductById);
 
 
