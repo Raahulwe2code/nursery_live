@@ -2,32 +2,11 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function addproduct(req, res) {
-  var {
-    vendor_id,
-    name,
-    seo_tag,
-    brand,
-    quantity,
-    unit,
-    product_stock_quantity,
-    price,
-    image,
-    review,
-    discount,
-    gst,
-    cgst,
-    sgst,
-    rating,
-    description,
-    category,
-    is_deleted,
-    status,
-    is_active,
-  } = req.body;
+  var { vendor_id, name, seo_tag,brand,quantity,unit,product_stock_quantity,price,image,review,discount,gst,cgst,sgst,rating, description,category,is_deleted,status,is_active,} = req.body;
   console.log("body--" + JSON.stringify(req.body));
   if (req.file) {
 
-    image = "http://localhost:5000/public/product_images/" + req.file.filename;
+    image = "http://localhost:8888/public/product_images/" + req.file.filename;
   } else {
     image = "no image"
   }
@@ -67,7 +46,9 @@ export async function addproduct(req, res) {
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
       } else {
-        res.status(StatusCodes.OK).json({ result });
+        console.log("chk------------------70")
+        console.log(result)
+        res.status(StatusCodes.OK).json(result);
       }
     }
   );
@@ -129,7 +110,7 @@ export async function updtateProductById(req, res) {
  console.log("data--"+JSON.stringify(req.body))
 
   if (req.file) {
-    image = "http://localhost:5000/public/product_images/" + req.file.filename;
+    image = "http://localhost:8888/public/product_images/" + req.file.filename;
   }
   connection.query(
     "update `product` set name='"+
@@ -171,9 +152,9 @@ export async function search_product(req, res) {
 
   // var query_string = "select * from product  where ";
   let search_obj = Object.keys(req.body)
-  console.log(req.headers.user)
-  if(req.headers.user!=""&&req.headers.user!=undefined){
-    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "'+req.headers.user+'") AS cart FROM product where ';
+  console.log(req.user_id)
+  if(req.user_id!=""&&req.user_id!=undefined){
+    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "'+req.user_id+'") AS cart FROM product where ';
   }else{
     var search_string = 'SELECT * FROM product where ';
   }
@@ -191,7 +172,12 @@ if(price_from!=""&&price_to!=""){
       }
     }else{
       if(req.body[search_obj[i]]!=""){
-        search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
+        var arr = JSON.stringify(req.body[search_obj[i]]);
+        var abc = "'" + arr + "'"
+        const id = abc.substring(abc.lastIndexOf("'[") + 2, abc.indexOf("]'"));
+        search_string += ' ' + search_obj[i] + ' IN ' + '(' + id + ') AND   '
+
+        // search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
       }
     }
     if(i===search_obj.length-1){
@@ -249,365 +235,4 @@ console.log(""+search_string+" LIMIT " +limit + "")
     }
   }
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-return false
-
-
-
-  if (
-    search == "" &&
-    category == "" &&
-    price_to == "" &&
-    price_from == "" &&
-    rating == "" &&
-    brand =="" &&
-    seo_tag == "" &&
-    vendor_id == ""
-  ) {
-    var pg = req.query;
-    var numRows;
-
-    var numPerPage = pg.per_page;
-    var page = parseInt(pg.page, pg.per_page) || 0;
-    var numPages;
-    var skip = page * numPerPage;
-    // Here we compute the LIMIT parameter for MySQL query
-    var limit = skip + "," + numPerPage;
-
-    connection.query(
-      "SELECT count(*) as numRows FROM product",
-      (err, results) => {
-        if (err) {
-        } else {
-          numRows = results[0].numRows;
-          numPages = Math.ceil(numRows / numPerPage);
-
-          connection.query(
-            "select * from product LIMIT " + limit + "",
-            (err, results) => {
-              if (err) {
-                //console.log(err)
-                res.status(502).send(err);
-              } else {
-                // //console.log("_____")
-                var responsePayload = {
-                  results: results,
-                };
-                if (page < numPages) {
-                  responsePayload.pagination = {
-                    current: page,
-                    perPage: numPerPage,
-                    previous: page > 0 ? page - 1 : undefined,
-                    next: page < numPages - 1 ? page + 1 : undefined,
-                  };
-                } else
-                  responsePayload.pagination = {
-                    err:
-                      "queried page " +
-                      page +
-                      " is >= to maximum page number " +
-                      numPages,
-                  };
-                // //console.log("responsePayload++++++++++++++++++++++++++++++++++++++++");
-                ////console.log(responsePayload);
-                res.status(200).send(responsePayload);
-              }
-            }
-          );
-        }
-      }
-    );
-  } else {
-    var search_string = "";
-
-    if (
-      search !== "" &&
-      category == "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating == "" &&
-      brand == "" &&
-      seo_tag == "" &&
-      vendor_id == ""
-    ) {
-      search_string += ' name LIKE "%' + search + '%" ';
-    }
-
-    if (
-      search == "" &&
-      category !== "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating == "" &&
-      brand == "" &&
-      seo_tag == "" &&
-      vendor_id == ""
-    ) {
-      search_string += '`category` LIKE "%' + category + '%" ';
-    }
-
-    if (
-      search == "" &&
-      category == "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating !== "" &&
-      brand == "" &&
-      seo_tag == "" &&
-      vendor_id == ""
-    ) {
-      search_string += '`rating` LIKE "%' + rating + '%" ';
-    }
-
-    if (
-      price_to !== "" &&
-      price_from !== "" &&
-      search == "" &&
-      category == "" &&
-      rating == "" &&
-      brand == "" &&
-      seo_tag == "" &&
-      vendor_id == ""
-    ) {
-      search_string +=
-        '`price` BETWEEN "' + price_from + '" AND "' + price_to + '" ';
-    }
-
-
-
-
-    if (
-      search == "" &&
-      category == "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating == "" &&
-      brand !== "" &&
-      seo_tag == "" &&
-      vendor_id == ""
-    ) {
-      search_string += '`brand` LIKE "%' + brand + '%" ';
-    }
-
-
-
-    if (
-      search == "" &&
-      category == "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating == "" &&
-      brand == "" &&
-      seo_tag !== "" &&
-      vendor_id == ""
-    ) {
-      search_string += '`seo_tag` LIKE "%' + seo_tag + '%" ';
-    }
-
-
-    if (
-      search == "" &&
-      category == "" &&
-      price_to == "" &&
-      price_from == "" &&
-      rating == "" &&
-      brand == "" &&
-      seo_tag == "" &&
-      vendor_id !== ""
-    ) {
-      search_string += '`vendor_id` LIKE "%' + vendor_id + '%" ';
-    }
-
-
-
-
-
-    if (
-      search !== "" &&
-      category !== "" &&
-      price_to !== "" &&
-      price_from !== "" &&
-      rating !== "" &&
-      brand !== "" &&
-      seo_tag !== "" &&
-      vendor_id !== ""
-    ) {
-      search_string +='name LIKE "%'+search +'%" AND`category` LIKE "%'+category +'%" AND  `rating` LIKE "%' +rating +'%" AND `seo_tag` LIKE "%'+seo_tag+'%" AND `brand` LIKE "%'+brand+'%" AND `vendor_id` LIKE "%'+vendor_id+'%" AND `price` BETWEEN "' +
-        price_from +
-        '" AND "' +
-        price_to +
-        '"   ';
-    }
-
-    if (
-      search == "" &&
-      category !== "" &&
-      price_to !== "" &&
-      price_from !== "" &&
-      rating !== "" &&
-      brand !== "" &&
-      seo_tag !== "" &&
-      vendor_id !== ""
-    ) {
-      search_string +=
-        'name LIKE "%' +
-        search +
-        '%" AND`category` LIKE "%' +
-        category +
-        '%" AND  `rating` LIKE "%' +
-        rating +
-        '%"   AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%"  AND `price` BETWEEN "' +
-        price_from +
-        '" AND "' +
-        price_to +
-        '"   ';
-    }
-
-    if (
-      search == "" &&
-      category == "" &&
-      price_to !== "" &&
-      price_from !== "" &&
-      rating !== "" &&
-      brand !== "" &&
-      seo_tag !== "" &&
-      vendor_id !== ""
-    ) {
-      search_string +=
-        'name LIKE "%' +
-        search +
-        '%" AND`category` LIKE "%' +
-        category +
-        '%" AND  `rating` LIKE "%' +
-        rating +
-        '%" AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%" AND `price` BETWEEN "' +
-        price_from +
-        '" AND "' +
-        price_to +
-        '"   ';
-    }
-
-    if (
-      search !== "" &&
-      category == "" &&
-      price_to !== "" &&
-      price_from !== "" &&
-      rating !== "" &&
-      brand !== "" &&
-      seo_tag !== "" &&
-      vendor_id !== ""
-    ) {
-      search_string +=
-        'name LIKE "%' +
-        search +
-        '%" AND`category` LIKE "%' +
-        category +
-        '%" AND  `rating` LIKE "%' +
-        rating +
-        '%"  AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%"  AND `price` BETWEEN "' +
-        price_from +
-        '" AND "' +
-        price_to +
-        '"   ';
-    }
-
-    if (
-      search !== "" &&
-      category == "" &&
-      price_to !== "" &&
-      price_from !== "" &&
-      rating !== "" &&
-      brand !== "" &&
-      seo_tag !== "" &&
-      vendor_id !== ""
-    ) {
-      search_string +=
-        'name LIKE "%' +
-        search +
-        '%" AND`category` LIKE "%' +
-        category +
-        '%" AND  `rating` LIKE "%' +
-        rating +
-        '%"  AND `seo_tag` LIKE "%' + seo_tag + '%" AND brand="%' + brand + '%"  AND vendor_id="%' + vendor_id + '%" AND `price` BETWEEN "' +
-        price_from +
-        '" AND "' +
-        price_to +
-        '"   ';
-    }
-
-    var pg = req.query;
-    var numRows;
-
-    var numPerPage = pg.per_page;
-    var page = parseInt(pg.page, pg.per_page) || 0;
-    var numPages;
-    var skip = page * numPerPage;
-    // Here we compute the LIMIT parameter for MySQL query
-    var limit = skip + "," + numPerPage;
-
-    connection.query(
-      "SELECT count(*) as numRows FROM product",
-      (err, results) => {
-        if (err) {
-        } else {
-          numRows = results[0].numRows;
-          numPages = Math.ceil(numRows / numPerPage);
-console.log("-----query"+search_string)
-          connection.query(
-            "SELECT * FROM product where " +
-            search_string +
-            " LIMIT " +
-            limit +
-            "",
-            (err, results) => {
-              if (err) {
-                //console.log(err)
-                res.status(502).send(err);
-              } else {
-                // //console.log("_____")
-                var responsePayload = {
-                  results: results,
-                };
-                if (page < numPages) {
-                  responsePayload.pagination = {
-                    current: page,
-                    perPage: numPerPage,
-                    previous: page > 0 ? page - 1 : undefined,
-                    next: page < numPages - 1 ? page + 1 : undefined,
-                  };
-                } else
-                  responsePayload.pagination = {
-                    err:
-                      "queried page " +
-                      page +
-                      " is >= to maximum page number " +
-                      numPages,
-                  };
-                // //console.log("responsePayload++++++++++++++++++++++++++++++++++++++++");
-                ////console.log(responsePayload);
-                res.status(200).send(responsePayload);
-              }
-            }
-          );
-        }
-      }
-    );
-
-  }
 }

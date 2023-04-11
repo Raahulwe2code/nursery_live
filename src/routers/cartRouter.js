@@ -6,11 +6,11 @@ import {
   cart_list,
   cart_update,
 } from "../controllers/cartController.js";
-
+import {auth_user,fetch_user} from '../../middleware/auth.js'
 const cartRouter = express.Router();
-cartRouter.post("/add_to_cart", add_to_cart);
-cartRouter.post("/cart_list", cart_list);
-cartRouter.get("/cart_list/:id", cartById);
-cartRouter.put("/cart_delete", cart_delete);
-cartRouter.put("/cart_update/:id", cart_update);
+cartRouter.post("/add_to_cart",auth_user, add_to_cart);
+cartRouter.post("/cart_list",fetch_user, cart_list);
+cartRouter.get("/cart_list/:id",fetch_user, cartById);
+cartRouter.put("/cart_delete",auth_user, cart_delete);
+cartRouter.put("/cart_update/:id",auth_user ,cart_update);
 export default cartRouter;

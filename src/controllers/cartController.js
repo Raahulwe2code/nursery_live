@@ -6,7 +6,7 @@ export async function add_to_cart(req, res) {
 
   connection.query(
     "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
-      user_id +
+    req.user_id +
       "', '" +
       product_id +
       "','" +
@@ -26,16 +26,19 @@ export async function add_to_cart(req, res) {
 
 export  function cart_list(req, res) {
 var str_cart=""
-var {user_id,for_}=req.body
-if(for_=='admin'){
+var {user_id}=req.body
+
+
+if(req.for_=='admin'){
   if(user_id!=''){
     str_cart = "select * from cart_view where user_id='"+user_id+"'"
   }else{
     str_cart = "select * from cart_view"
   }
 }else{
-  if(user_id!=''){
-    str_cart = "select * from cart_view where user_id='"+user_id+"'"
+  if(req.for_=='user'){
+    user_id = ""
+    str_cart = "select * from cart_view where user_id='"+req.user_id+"'"
   }
 }
 console.log(str_cart)

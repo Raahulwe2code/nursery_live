@@ -6,7 +6,6 @@ export async function add_order(req, res) {
 
   var {
     product_id,
-    user_id,
     total_order_product_quantity,
     total_amount,
     total_gst,
@@ -22,7 +21,7 @@ export async function add_order(req, res) {
   } = req.body;
 
   connection.query(
-    "insert into `order` ( `order_id`, `product_id`,`user_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" +orderno +"','"+product_id+"', '" +user_id +"','" +total_order_product_quantity +
+    "insert into `order` ( `order_id`, `product_id`,`user_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" +orderno +"','"+product_id+"', '" +req.user_id +"','" +total_order_product_quantity +
       "','" +
       total_amount +
       "','" +
@@ -50,14 +49,55 @@ export async function add_order(req, res) {
       if (err) {
         res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
       } else {
-        res.status(StatusCodes.OK).json(rows);
+
+        connection.query("SELECT product_stock_quantity FROM product WHERE id='" +product_id +"'",
+          (err, result) => {
+            if (err) {
+              res.status(500).send(err);
+            } else {
+              console.log("________chk qty.")
+              console.log(result)
+             let update_stock_qty =  result.product_stock_quantity - total_order_product_quantity
+if(update_stock_qty>=0){
+
+}
+
+              // connection.query(
+              //   "update `product` set name = product_stock_quantity='"+total_order_product_quantity+"' where id='" +product_id +"'",
+              //   (err, result) => {
+              //     if (err) {
+              //       res.status(500).send(err);
+              //     } else {
+              //       // res.status(200).json({ message: result });
+              //     }
+              //   }
+              // );
+              res.status(StatusCodes.OK).json(rows);
+
+            }
+          }
+        );
+
       }
     }
   );
 }
 
 export async function order_list(req, res) {
-  connection.query(" select * from `order`", (err, rows) => {
+  
+  if(req.for_=='admin'){
+    if(user_id!=''){
+      str_order = "select * from `order` where user_id='"+user_id+"'"
+    }else{
+      str_order = "select * from `order`"
+    }
+  }else{
+    if(req.for_=='user'){
+      user_id = ""
+      str_order = "select * from `order` where user_id='"+req.user_id+"'"
+    }
+  }
+  connection.query(str_order, (err, rows) => {
     if (err) {
       res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
     } else {
@@ -127,7 +167,7 @@ export async function order_update(req, res) {
       "', discount_coupon_value='" +
       discount_coupon_value +
       "'  where id ='" +
-      id +
+      req.user +
       "' ",
     (err, rows) => {
       if (err) {
@@ -156,7 +196,22 @@ export async function order_delete(req, res) {
 
 export async function order_search(req, res) {
  let search_obj = Object.keys(req.body)
-var search_string = "where ";
+// var search_string = "where ";
+var search_string=""
+console.log(req.user_id)
+if(req.for_=='admin'){
+  if(req.body.user_id!=''&&req.body.user_id!=undefined){
+     search_string += "SELECT * FROM order_view where "
+  }else{
+     search_string += "SELECT * FROM order_view where"
+  }
+}else{
+  if(req.for_=='user'){
+     
+     search_string = "SELECT * FROM order_view where user_id='"+req.user_id+"' AND "
+  }
+}
+
 
 console.log(search_obj)
 for(var i=0;i<=search_obj.length-1;i++){
@@ -165,6 +220,7 @@ for(var i=0;i<=search_obj.length-1;i++){
       search_string+= `name LIKE "%${req.body[search_obj[i]]}%" AND `
     }
   }else{
+    
     if(req.body[search_obj[i]]!=""){
       search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND `
     }
@@ -193,9 +249,7 @@ console.log(search_string)
           numRows = results[0].numRows;
           numPages = Math.ceil(numRows / numPerPage);
 
-          connection.query(
-            "SELECT * FROM order_view " +
-              search_string +
+          connection.query(search_string +
               " LIMIT " +
               limit +
               "",
