@@ -8,6 +8,7 @@ import bodyParser from "body-parser";
 import cartRouter from "./src/routers/cartRouter.js";
 import userRouter from "./src/routers/userRouter.js";
 import orderRouter from "./src/routers/orderRouter.js";
+import notificationRouter from "./src/routers/notificationRouter.js";
 import mongoose from 'mongoose';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport  from 'passport'
@@ -32,7 +33,7 @@ app.use(
 
 app.use(express.static("public"));
 
-app.use(productRouter, cartRouter, userRouter, orderRouter);
+app.use(productRouter, cartRouter, userRouter, orderRouter,notificationRouter);
 
 
 mongoose.connect("mongodb+srv://Raahul_verma:vw48MlF9mMcMJL7y@cluster0.hxtq31y.mongodb.net/CrudNew?retryWrites=true&w=majority",{
@@ -79,7 +80,6 @@ app.get("/log",ensureAuth, async(req,res)=>{
       }else{
         res.status(200).send(err)
       }
-
     }else{
       if(rows!=''){
         var uid = rows.insertId
@@ -96,6 +96,14 @@ app.get("/log",ensureAuth, async(req,res)=>{
           //     //console.log(["update token", rows])
           //   }
           // })
+
+          connection.query('INSERT INTO `notification`(`actor_id`, `actor_type`, `message`, `status`) VALUES ("'+rows.insertId+'","user","welcome to nursery live please compleate your profile","unread"),("001","admin","create new user (user_id '+rows.insertId+')","unread")', (err, rows) => {
+            if (err) {
+              //console.log({ "notification": err })
+            } else {
+              console.log("_______notification-send__94________")
+            }
+          })
           res.send({"response":"successfully created","user_id":rows,"user_email":rows.insertId ,"token":token,"redirect_url":"http://localhost:3000/"})
         });
       

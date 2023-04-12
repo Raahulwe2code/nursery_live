@@ -72,7 +72,7 @@ export async function cart_update(req, res) {
   var { user_id, product_id, cart_product_quantity } = req.body;
   const id = req.params.id;
   connection.query(
-    "update cart set product_id='"+product_id+"',quantity='"+cart_product_quantity+"' where id ='"+id+"' AND user_id='"+user_id+"'",(err, rows) => {
+    "update cart set product_id='"+product_id+"',cart_product_quantity='"+cart_product_quantity+"' where id ='"+id+"' AND user_id='"+user_id+"'",(err, rows) => {
       if(err) {
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)

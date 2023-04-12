@@ -1,5 +1,7 @@
 import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
+import nodemailer  from "nodemailer"
+
 
 export async function add_order(req, res) {
   var orderno = Math.floor(100000 + Math.random() * 900000);
@@ -19,9 +21,32 @@ export async function add_order(req, res) {
     discount_coupon,
     discount_coupon_value,
   } = req.body;
+console.log("user_id=============================================22")
+console.log(req.user_id)
 
+connection.query("SELECT * FROM user WHERE id='" +req.user_id+"'",
+(err, result) => {
+if(err){
+  console.log(err)
+}else{
+  // console.log(result)
+ var {first_name,last_name,email,phone_no,pincode,city,address,alternate_address}=result[0]
+if(first_name!='' && last_name!='' && email!='' && phone_no!='' && pincode!='' && city!='' && address!='' && alternate_address!=''){
+  console.log("true")
+  connection.query("SELECT product_stock_quantity FROM product WHERE id='" +product_id +"'",
+  (err, result) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      console.log("________chk qty.")
+      console.log(result)
+      console.log(parseInt(result[0].product_stock_quantity))
+     var update_stock_qty =  parseInt(result[0].product_stock_quantity) - parseInt(total_order_product_quantity)
+     console.log("--------------------update_stock_qty-----------------")
+     console.log(update_stock_qty)
+if(update_stock_qty>=0 && total_order_product_quantity>0){
   connection.query(
-    "insert into `order` ( `order_id`, `product_id`,`user_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" +orderno +"','"+product_id+"', '" +req.user_id +"','" +total_order_product_quantity +
+    "insert into `order` ( `order_id`, `product_id`,`user_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" +orderno +"','"+product_id+"', '" +req.user_id+"','" +total_order_product_quantity +
       "','" +
       total_amount +
       "','" +
@@ -50,37 +75,67 @@ export async function add_order(req, res) {
         res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
       } else {
 
-        connection.query("SELECT product_stock_quantity FROM product WHERE id='" +product_id +"'",
-          (err, result) => {
-            if (err) {
-              res.status(500).send(err);
-            } else {
-              console.log("________chk qty.")
-              console.log(result)
-             let update_stock_qty =  result.product_stock_quantity - total_order_product_quantity
-if(update_stock_qty>=0){
-
-}
-
-              // connection.query(
-              //   "update `product` set name = product_stock_quantity='"+total_order_product_quantity+"' where id='" +product_id +"'",
-              //   (err, result) => {
-              //     if (err) {
-              //       res.status(500).send(err);
-              //     } else {
-              //       // res.status(200).json({ message: result });
-              //     }
-              //   }
-              // );
-              res.status(StatusCodes.OK).json(rows);
-
-            }
+      connection.query(
+        // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
+        "UPDATE `product` SET product_stock_quantity='"+update_stock_qty+"' WHERE id='" +product_id +"'",
+        (err, result) => {
+          if (err) {
+            console.log(err)
+            res.status(500).send(err);
+          } else {
+            // res.status(200).json({ message: result });
           }
-        );
-
+        }
+      );
+      connection.query('INSERT INTO `notification`(`actor_id`, `actor_type`, `message`, `status`) VALUES ("'+req.user_id+'","user","successfully placed order,order_no. '+orderno+'","unread"),("001","admin","recived order (order_no. '+orderno+') by '+first_name+', user_id '+req.user_id+'","unread")', (err, rows) => {
+        if (err) {
+          //console.log({ "notification": err })
+        } else {
+          console.log("_______notification-send__94________")
+        }
+      })
+      const mail_configs = {
+        from: 'ashish.we2code@gmail.com',
+        to: email,
+        subject: 'order status ',
+        text: "order added successfully",
+        html: "<h1>order added successfully<h1/>"
+      }
+      nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'ashish.we2code@gmail.com',
+          pass: 'nczaguozpagczmjv'
+        }
+      })
+        .sendMail(mail_configs, (err) => {
+          if (err) {
+            return //console.log({ "email_error": err });
+          } else {
+            return { "send_mail_status": "send successfully" };
+          }
+        })
+      res.status(StatusCodes.OK).json({"status":"ok","order_id":orderno,"response":"order successfully added","id":rows.insertId});
       }
     }
   );
+}else{
+  res.send({"response":"product stock unavailable"})
+}
+
+    }
+  }
+);
+
+}else{
+  console.log("false")
+  res.status(200).send({response:"please complete your profile"})
+  
+}
+
+}
+})
+
 }
 
 export async function order_list(req, res) {
@@ -287,4 +342,59 @@ console.log(search_string)
       }
     );
   // }
+}
+
+export function order_status_update(req,res){
+  console.log("order_status_update-----------------")
+  console.log(req.body)
+  let email_user=""
+  connection.query("SELECT * FROM user WHERE id='" +req.body.user_id+"'",
+  (err, result) => {
+  if(err){
+    console.log(err)
+  }else{
+    // console.log(result)
+    email_user=result[0].email
+    connection.query('INSERT INTO `notification`(`actor_id`, `actor_type`, `message`, `status`) VALUES ("'+req.body.user_id+'","user","order your order current staus is '+req.body.status_order+'","unread"),("001","admin","successfully changed user (user_id '+req.body.user_id+') order status","unread")', (err, rows) => {
+      if (err) {
+        //console.log({ "notification": err })
+      } else {
+        console.log("_______notification-send__94________")
+      }
+    })
+    connection.query(
+      "UPDATE `order` SET status_order='"+req.body.status_order+"' WHERE order_id='"+req.body.order_id+"'",
+      (err, result) => {
+        if (err) {
+          console.log(err)
+          res.status(500).send(err);
+        } else {
+      const mail_configs = {
+        from: 'ashish.we2code@gmail.com',
+        to: email_user,
+        subject: 'order status change',
+        text: "order your order current staus is "+req.body.status_order+"",
+        html: "<h1> your order current staus is "+req.body.status_order+"<h1/>"
+      }
+      nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'ashish.we2code@gmail.com',
+          pass: 'nczaguozpagczmjv'
+        }
+      })
+        .sendMail(mail_configs, (err) => {
+          if (err) {
+            return //console.log({ "email_error": err });
+          } else {
+            return { "send_mail_status": "send successfully" };
+          }
+        })
+         res.status(200).json({"response": "status updated successfully" });
+        }
+      }  
+    );
+}
+})
+
 }

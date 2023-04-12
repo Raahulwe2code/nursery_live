@@ -47,6 +47,7 @@ import {search_product} from "../src/controllers/productController.js"
       console.log("chek______________________________________________middleware___"+req.headers.user_token)
       let token = jwt.verify(req.headers.user_token,  process.env.USER_JWT_SECRET_KEY);
       console.log(token)
+      console.log(token.id)
      
       if(req.headers.user_token!="" && req.headers.user_token!=undefined){
         req.user_id=token.id
