@@ -2,7 +2,7 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function addproduct(req, res) {
-  var { vendor_id, name, seo_tag,brand,quantity,unit,product_stock_quantity,price,image,review,discount,gst,cgst,sgst,rating, description,category,is_deleted,status,is_active,} = req.body;
+  var { vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price,mrp, image, review, discount, gst, cgst, sgst, rating, description, category, is_deleted, status, is_active, } = req.body;
   console.log("body--" + JSON.stringify(req.body));
   if (req.file) {
 
@@ -10,6 +10,9 @@ export async function addproduct(req, res) {
   } else {
     image = "no image"
   }
+
+
+if(mrp > price){
   connection.query(
     ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`image`,`gst`,`cgst`,`sgst`,`category`,`is_active`,`review`,`discount`,`rating`,`description`,`is_deleted`,`status`) values ("' +
     vendor_id +
@@ -52,6 +55,9 @@ export async function addproduct(req, res) {
       }
     }
   );
+}else{
+  res.send({"response":"product price is always less then product MRP"})
+}
 }
 
 export async function getallProduct(req, res) {
@@ -83,39 +89,18 @@ export async function getProductbyId(req, res) {
 
 export async function updtateProductById(req, res) {
   let {
-    vendor_id,
-    name,
-    seo_tag,
-    brand,
-    quantity,
-    unit,
-    product_stock_quantity,
-    price,
-    image,
-    review,
-    discount,
-    gst,
-    cgst,
-    sgst,
-    rating,
-    description,
-    category,
-    is_deleted,
-    status,
-    is_active,
-  } = req.body;
+    product_id, vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price, image, review, discount, gst, cgst, sgst, rating, description, category,is_deleted,status,is_active} = req.body;
+  let id = product_id;
 
-  let id = req.params.id;
-
- console.log("data--"+JSON.stringify(req.body))
+  console.log("data--" + JSON.stringify(req.body))
 
   if (req.file) {
     image = "http://localhost:8888/public/product_images/" + req.file.filename;
   }
   connection.query(
-    "update `product` set name='"+
-    name+"',seo_tag='"+seo_tag+"',brand='"+brand+"',quantity='"+quantity+"',unit='"+unit+"',product_stock_quantity='"+product_stock_quantity+"',price='" +
-    price+"',image='"+image+"',review='"+review+"', discount='"+discount+"' ,rating='"+rating+"',description='"+description+"' ,category='"+category+"',vendor_id='"+vendor_id+"',gst='"+gst+"',sgst='"+sgst+"', cgst= '"+cgst +"', is_deleted='"+is_deleted +"',is_active='"+is_active +
+    "update `product` set name='" +
+    name + "',seo_tag='" + seo_tag + "',brand='" + brand + "',quantity='" + quantity + "',unit='" + unit + "',product_stock_quantity='" + product_stock_quantity + "',price='" +
+    price + "',image='" + image + "',review='" + review + "', discount='" + discount + "' ,rating='" + rating + "',description='" + description + "' ,category='" + category + "',vendor_id='" + vendor_id + "',gst='" + gst + "',sgst='" + sgst + "', cgst= '" + cgst + "', is_deleted='" + is_deleted + "',is_active='" + is_active +
     "' ,status='" +
     status +
     "' where id='" +
@@ -145,7 +130,7 @@ export async function deleteById(req, res) {
 }
 
 export async function search_product(req, res) {
-  var { price_from, price_to} = req.body;
+  var { price_from, price_to } = req.body;
 
   // 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user + '") FROM products  AND '
 
@@ -153,25 +138,25 @@ export async function search_product(req, res) {
   // var query_string = "select * from product  where ";
   let search_obj = Object.keys(req.body)
   console.log(req.user_id)
-  if(req.user_id!=""&&req.user_id!=undefined){
-    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "'+req.user_id+'") AS cart FROM product where ';
-  }else{
-    var search_string = 'SELECT * FROM product where ';
+  if (req.user_id != "" && req.user_id != undefined) {
+    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user_id + '") AS cart,   (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
+  } else {
+    var search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
   }
 
-  
-  console.log(search_obj)
-if(price_from!=""&&price_to!=""){
-  search_string+= '(`price` BETWEEN "'+price_from+'" AND "'+price_to+'") AND '
-}
 
-  for(var i=2;i<=search_obj.length-1;i++){
-    if(i==2){
-      if(req.body[search_obj[i]]!=""){
-        search_string+= `name LIKE "%${req.body[search_obj[i]]}%" AND   `
+  console.log(search_obj)
+  if (price_from != "" && price_to != "") {
+    search_string += '(`price` BETWEEN "' + price_from + '" AND "' + price_to + '") AND '
+  }
+
+  for (var i = 2; i <= search_obj.length - 1; i++) {
+    if (i == 2) {
+      if (req.body[search_obj[i]] != "") {
+        search_string += `name LIKE "%${req.body[search_obj[i]]}%" AND   `
       }
-    }else{
-      if(req.body[search_obj[i]]!=""){
+    } else {
+      if (req.body[search_obj[i]] != "") {
         var arr = JSON.stringify(req.body[search_obj[i]]);
         var abc = "'" + arr + "'"
         const id = abc.substring(abc.lastIndexOf("'[") + 2, abc.indexOf("]'"));
@@ -180,59 +165,59 @@ if(price_from!=""&&price_to!=""){
         // search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
       }
     }
-    if(i===search_obj.length-1){
-      search_string= search_string.substring(0, search_string.length-6);
+    if (i === search_obj.length - 1) {
+      search_string = search_string.substring(0, search_string.length - 6);
     }
   }
-console.log(search_string)
-var pg = req.query;
-var numRows;
+  console.log(search_string)
+  var pg = req.query;
+  var numRows;
 
-var numPerPage = pg.per_page;
-var page = parseInt(pg.page, pg.per_page) || 0;
-var numPages;
-var skip = page * numPerPage;
-// Here we compute the LIMIT parameter for MySQL query
-var limit = skip + "," + numPerPage;
+  var numPerPage = pg.per_page;
+  var page = parseInt(pg.page, pg.per_page) || 0;
+  var numPages;
+  var skip = page * numPerPage;
+  // Here we compute the LIMIT parameter for MySQL query
+  var limit = skip + "," + numPerPage;
 
-connection.query(
-  "SELECT count(*) as numRows FROM product",
-  (err, results) => {
-    if (err) {
-    } else {
-      numRows = results[0].numRows;
-      numPages = Math.ceil(numRows / numPerPage);
-console.log(""+search_string+" LIMIT " +limit + "")
-      connection.query(""+search_string+" LIMIT " +limit + "",
-        (err, results) => {
-          if (err) {
-            //console.log(err)
-            res.status(502).send(err);
-          } else {
-            // //console.log("_____")
-            var responsePayload = {
-              results: results,
-            };
-            if (page < numPages) {
-              responsePayload.pagination = {
-                current: page,
-                perPage: numPerPage,
-                previous: page > 0 ? page - 1 : undefined,
-                next: page < numPages - 1 ? page + 1 : undefined,
+  connection.query(
+    "SELECT count(*) as numRows FROM product",
+    (err, results) => {
+      if (err) {
+      } else {
+        numRows = results[0].numRows;
+        numPages = Math.ceil(numRows / numPerPage);
+        console.log("" + search_string + " LIMIT " + limit + "")
+        connection.query("" + search_string + " LIMIT " + limit + "",
+          (err, results) => {
+            if (err) {
+              //console.log(err)
+              res.status(502).send(err);
+            } else {
+              // //console.log("_____")
+              var responsePayload = {
+                results: results,
               };
-            } else
-              responsePayload.pagination = {
-                err:
-                  "queried page " +
-                  page +
-                  " is >= to maximum page number " +
-                  numPages,
-              };
-            res.status(200).send(responsePayload);
+              if (page < numPages) {
+                responsePayload.pagination = {
+                  current: page,
+                  perPage: numPerPage,
+                  previous: page > 0 ? page - 1 : undefined,
+                  next: page < numPages - 1 ? page + 1 : undefined,
+                };
+              } else
+                responsePayload.pagination = {
+                  err:
+                    "queried page " +
+                    page +
+                    " is >= to maximum page number " +
+                    numPages,
+                };
+              res.status(200).send(responsePayload);
+            }
           }
-        }
-      );
+        );
+      }
     }
-  }
-);
+  );
 }

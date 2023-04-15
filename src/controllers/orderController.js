@@ -256,14 +256,14 @@ var search_string=""
 console.log(req.user_id)
 if(req.for_=='admin'){
   if(req.body.user_id!=''&&req.body.user_id!=undefined){
-     search_string += "SELECT * FROM order_view where "
+     search_string += "SELECT * FROM order_view_1 where "
   }else{
-     search_string += "SELECT * FROM order_view where"
+     search_string += "SELECT * FROM order_view_1 where"
   }
 }else{
   if(req.for_=='user'){
      
-     search_string = "SELECT * FROM order_view where user_id='"+req.user_id+"' AND "
+     search_string = "SELECT * FROM order_view_1 where user_id='"+req.user_id+"' AND "
   }
 }
 

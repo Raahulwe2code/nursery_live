@@ -9,6 +9,8 @@ import cartRouter from "./src/routers/cartRouter.js";
 import userRouter from "./src/routers/userRouter.js";
 import orderRouter from "./src/routers/orderRouter.js";
 import notificationRouter from "./src/routers/notificationRouter.js";
+import product_images_router from "./src/routers/product_images_router.js";
+import filter_list_router from "./src/routers/filter_list_router.js";
 import mongoose from 'mongoose';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport  from 'passport'
@@ -21,7 +23,7 @@ const app = express();
 connection;
 app.use(cors());
 
-
+app.use(express.json({limit: '90mb'}));
 app.use(bodyParser.json());
 // to support JSON-encoded bodies
 app.use(
@@ -33,7 +35,7 @@ app.use(
 
 app.use(express.static("public"));
 
-app.use(productRouter, cartRouter, userRouter, orderRouter,notificationRouter);
+app.use(productRouter, cartRouter, userRouter, orderRouter,notificationRouter,product_images_router,filter_list_router);
 
 
 mongoose.connect("mongodb+srv://Raahul_verma:vw48MlF9mMcMJL7y@cluster0.hxtq31y.mongodb.net/CrudNew?retryWrites=true&w=majority",{

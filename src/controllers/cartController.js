@@ -31,14 +31,14 @@ var {user_id}=req.body
 
 if(req.for_=='admin'){
   if(user_id!=''){
-    str_cart = "select * from cart_view where user_id='"+user_id+"'"
+    str_cart = "select * from cart_view_1 where user_id='"+user_id+"'"
   }else{
-    str_cart = "select * from cart_view"
+    str_cart = "select * from cart_view_1"
   }
 }else{
   if(req.for_=='user'){
     user_id = ""
-    str_cart = "select * from cart_view where user_id='"+req.user_id+"'"
+    str_cart = "select * from cart_view_1 where user_id='"+req.user_id+"'"
   }
 }
 console.log(str_cart)
