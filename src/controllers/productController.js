@@ -2,62 +2,52 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function addproduct(req, res) {
-  var { vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price,mrp, image, review, discount, gst, cgst, sgst, rating, description, category, is_deleted, status, is_active, } = req.body;
+  var { vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price, mrp, review, discount, gst, cgst, sgst, rating, description, category } = req.body;
   console.log("body--" + JSON.stringify(req.body));
-  if (req.file) {
+  console.log(mrp + " > " + price)
+  const n_mrp = parseInt(mrp)
+  const n_price = parseInt(price)
 
-    image = "http://localhost:8888/public/product_images/" + req.file.filename;
-  } else {
-    image = "no image"
-  }
-
-
-if(mrp > price){
-  connection.query(
-    ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`image`,`gst`,`cgst`,`sgst`,`category`,`is_active`,`review`,`discount`,`rating`,`description`,`is_deleted`,`status`) values ("' +
-    vendor_id +
-    '","' +
-    name +
-    '","' + seo_tag + '","' + brand + '","' + quantity + '","' + unit + '","' + product_stock_quantity + '","' +
-    price +
-    '","' +
-    image +
-    '" ,"' +
-    gst +
-    '","' +
-    cgst +
-    '","' +
-    sgst +
-    '","' +
-    category +
-    '","' +
-    is_active +
-    '","' +
-    review +
-    '","' +
-    discount +
-    '", "' +
-    rating +
-    '","' +
-    description +
-    '","' +
-    is_deleted +
-    '","' +
-    status +
-    '") ',
-    (err, result) => {
-      if (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-      } else {
-        console.log("chk------------------70")
-        console.log(result)
-        res.status(StatusCodes.OK).json(result);
+  console.log(n_mrp + " > " + n_price)
+  console.log(n_mrp > n_price)
+  if (n_mrp > n_price) {
+    connection.query(
+      ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`mrp`,`gst`,`sgst`,`cgst`,`category`,`review`,`discount`,`rating`,`description`) values ("' +
+      vendor_id +
+      '","' +
+      name +
+      '","' + seo_tag + '","' + brand + '","' + quantity + '","' + unit + '","' + product_stock_quantity + '","' +
+      price +
+      '","' + mrp + '","' +
+      gst +
+      '","' +
+      sgst +
+      '","' +
+      cgst +
+      '","' +
+      category +
+      '","' +
+      review +
+      '","' +
+      discount +
+      '", "' +
+      rating +
+      '","' +
+      description +
+      '") ',
+      (err, result) => {
+        if (err) {
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        } else {
+          console.log("chk------------------70")
+          console.log(result)
+          res.status(StatusCodes.OK).json({ "response": "add successfull", "message": result });
+        }
       }
-    }
-  );
-}else{
-  res.send({"response":"product price is always less then product MRP"})
-}
+    );
+  } else {
+    res.send({ "response": "product price is always less then product MRP" })
+  }
 }
 
 export async function getallProduct(req, res) {
@@ -87,20 +77,17 @@ export async function getProductbyId(req, res) {
   );
 }
 
-export async function updtateProductById(req, res) {
+export async function update_Product(req, res) {
   let {
-    product_id, vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price, image, review, discount, gst, cgst, sgst, rating, description, category,is_deleted,status,is_active} = req.body;
-  let id = product_id;
+    id, vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price, mrp, review, discount, gst, cgst, sgst, rating, description, category, is_deleted, status, is_active } = req.body;
+
 
   console.log("data--" + JSON.stringify(req.body))
 
-  if (req.file) {
-    image = "http://localhost:8888/public/product_images/" + req.file.filename;
-  }
   connection.query(
     "update `product` set name='" +
     name + "',seo_tag='" + seo_tag + "',brand='" + brand + "',quantity='" + quantity + "',unit='" + unit + "',product_stock_quantity='" + product_stock_quantity + "',price='" +
-    price + "',image='" + image + "',review='" + review + "', discount='" + discount + "' ,rating='" + rating + "',description='" + description + "' ,category='" + category + "',vendor_id='" + vendor_id + "',gst='" + gst + "',sgst='" + sgst + "', cgst= '" + cgst + "', is_deleted='" + is_deleted + "',is_active='" + is_active +
+    price + "', mrp ='" + mrp + "',review='" + review + "', discount='" + discount + "' ,rating='" + rating + "',description='" + description + "' ,category='" + category + "',vendor_id='" + vendor_id + "',gst='" + gst + "',sgst='" + sgst + "', cgst= '" + cgst + "', is_deleted='" + is_deleted + "',is_active='" + is_active +
     "' ,status='" +
     status +
     "' where id='" +
@@ -108,22 +95,26 @@ export async function updtateProductById(req, res) {
     "' ",
     (err, result) => {
       if (err) {
-        res.status(500).send(err);
+        res.status(500).send({ response: "error - opration failed" });
       } else {
-        res.status(200).json({ message: result });
+        result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull" })
+          : res.status(500).send({ response: "error - opration failed" })
+
       }
     }
   );
 }
 
-export async function deleteById(req, res) {
+export async function delete_product(req, res) {
+
   connection.query(
-    "delete  from product where id ='" + req.params.id + "'",
+    "delete  from product where id ='" + req.body.id + "'",
     (err, result) => {
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
       } else {
-        res.status(StatusCodes.OK).json({ message: "delete successfully" });
+        result.affectedRows == "1" ? res.status(StatusCodes.OK).json({ message: "delete successfully" }) : res.status(StatusCodes.OK).json({ message: "not delete " });
+
       }
     }
   );
@@ -147,7 +138,7 @@ export async function search_product(req, res) {
 
   console.log(search_obj)
   if (price_from != "" && price_to != "") {
-    search_string += '(`price` BETWEEN "' + price_from + '" AND "' + price_to + '") AND '
+    search_string += '(`price` BETWEEN "' + price_from + '" AND "' + price_to + '") AND   '
   }
 
   for (var i = 2; i <= search_obj.length - 1; i++) {

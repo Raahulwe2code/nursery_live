@@ -2,16 +2,16 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function add_to_cart(req, res) {
- var {user_id,product_id,cart_product_quantity}= req.body;
+  var { user_id, product_id, cart_product_quantity } = req.body;
 
   connection.query(
     "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
     req.user_id +
-      "', '" +
-      product_id +
-      "','" +
-      cart_product_quantity +
-      "')",
+    "', '" +
+    product_id +
+    "','" +
+    cart_product_quantity +
+    "')",
     (err, rows) => {
       if (err) {
         res
@@ -24,24 +24,10 @@ export async function add_to_cart(req, res) {
   );
 }
 
-export  function cart_list(req, res) {
-var str_cart=""
-var {user_id}=req.body
+export function cart_list(req, res) {
+  var str_cart = 'select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image from cart_view_1 where user_id="' + req.user_id + '"'
 
-
-if(req.for_=='admin'){
-  if(user_id!=''){
-    str_cart = "select * from cart_view_1 where user_id='"+user_id+"'"
-  }else{
-    str_cart = "select * from cart_view_1"
-  }
-}else{
-  if(req.for_=='user'){
-    user_id = ""
-    str_cart = "select * from cart_view_1 where user_id='"+req.user_id+"'"
-  }
-}
-console.log(str_cart)
+  console.log(str_cart)
   connection.query(str_cart, (err, rows) => {
     if (err) {
       res
@@ -68,12 +54,13 @@ export async function cartById(req, res) {
     }
   );
 }
+
 export async function cart_update(req, res) {
   var { user_id, product_id, cart_product_quantity } = req.body;
   const id = req.params.id;
   connection.query(
-    "update cart set product_id='"+product_id+"',cart_product_quantity='"+cart_product_quantity+"' where id ='"+id+"' AND user_id='"+user_id+"'",(err, rows) => {
-      if(err) {
+    "update cart set product_id='" + product_id + "',cart_product_quantity='" + cart_product_quantity + "' where id ='" + id + "' AND user_id='" + user_id + "'", (err, rows) => {
+      if (err) {
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
@@ -85,9 +72,9 @@ export async function cart_update(req, res) {
 }
 
 export async function cart_delete(req, res) {
-  const {id,user_id} = req.body
+  const { id, user_id } = req.body
 
-  connection.query("delete from cart where id ='" + id + "' AND user_id='"+user_id+"'", (err, rows) => {
+  connection.query("delete from cart where id ='" + id + "' AND user_id='" + user_id + "'", (err, rows) => {
     if (err) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
     } else {

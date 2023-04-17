@@ -2,8 +2,8 @@ import express from "express";
 import multer from "multer";
 import bodyParser from "body-parser";
 import path from "path";
-import {addproduct,deleteById,getallProduct, getProductbyId,search_product, updtateProductById} from "../controllers/productController.js";
-import {admin_auth,fetch_user} from '../../middleware/auth.js'
+import { addproduct, delete_product, getallProduct, getProductbyId, search_product, update_Product } from "../controllers/productController.js";
+import { admin_auth, fetch_user } from '../../middleware/auth.js'
 const app = express();
 app.use(bodyParser.json());
 
@@ -30,12 +30,12 @@ const upload = multer({ storage: storage });
 
 const productRouter = express.Router();
 
-productRouter.post("/addProduct", upload.single("image"),admin_auth, addproduct);
-productRouter.put("/getproduct/:id",upload.single("image"),admin_auth,updtateProductById);
+productRouter.post("/addProduct", admin_auth, addproduct);
+productRouter.put("/update_product", admin_auth, update_Product);
 
 productRouter.get("/getproduct", getallProduct);
 productRouter.get("/getproduct/:id", getProductbyId);
 
-productRouter.delete("/delete_product/:id",admin_auth, deleteById);
-productRouter.post("/search",fetch_user, search_product);
+productRouter.put("/delete_product", admin_auth, delete_product);
+productRouter.post("/search", fetch_user, search_product);
 export default productRouter;
