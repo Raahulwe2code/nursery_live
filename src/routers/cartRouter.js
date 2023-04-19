@@ -11,6 +11,6 @@ const cartRouter = express.Router();
 cartRouter.post("/add_to_cart", auth_user, add_to_cart);
 cartRouter.get("/cart_list", auth_user, cart_list);
 cartRouter.get("/cart_list/:id", fetch_user, cartById);
-cartRouter.put("/cart_delete", admin_auth, cart_delete);
-cartRouter.put("/cart_update/:id", auth_user, cart_update);
+cartRouter.put("/cart_delete", auth_user, cart_delete);
+cartRouter.put("/cart_update", auth_user, cart_update);
 export default cartRouter;

@@ -37,16 +37,16 @@ export async function addproduct(req, res) {
       '") ',
       (err, result) => {
         if (err) {
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ "response": "find error", "status": false });
         } else {
           console.log("chk------------------70")
           console.log(result)
-          res.status(StatusCodes.OK).json({ "response": "add successfull", "message": result });
+          res.status(StatusCodes.OK).json({ "response": "add successfull", "message": result, "status": true });
         }
       }
     );
   } else {
-    res.send({ "response": "product price is always less then product MRP" })
+    res.send({ "response": "product price is always less then product MRP", "status": false })
   }
 }
 
@@ -78,32 +78,41 @@ export async function getProductbyId(req, res) {
 }
 
 export async function update_Product(req, res) {
-  let {
-    id, vendor_id, name, seo_tag, brand, quantity, unit, product_stock_quantity, price, mrp, review, discount, gst, cgst, sgst, rating, description, category, is_deleted, status, is_active } = req.body;
+  let req_obj = req.body;
+  var updat_str = "update `product` set "
+  var k = ""
+  if (req_obj.id !== undefined && req_obj.id !== "") {
+    for (k in req_obj) {
 
-
-  console.log("data--" + JSON.stringify(req.body))
-
-  connection.query(
-    "update `product` set name='" +
-    name + "',seo_tag='" + seo_tag + "',brand='" + brand + "',quantity='" + quantity + "',unit='" + unit + "',product_stock_quantity='" + product_stock_quantity + "',price='" +
-    price + "', mrp ='" + mrp + "',review='" + review + "', discount='" + discount + "' ,rating='" + rating + "',description='" + description + "' ,category='" + category + "',vendor_id='" + vendor_id + "',gst='" + gst + "',sgst='" + sgst + "', cgst= '" + cgst + "', is_deleted='" + is_deleted + "',is_active='" + is_active +
-    "' ,status='" +
-    status +
-    "' where id='" +
-    id +
-    "' ",
-    (err, result) => {
-      if (err) {
-        res.status(500).send({ response: "error - opration failed" });
-      } else {
-        result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull" })
-          : res.status(500).send({ response: "error - opration failed" })
+      if (!["updated_on", "id", "all_images_url", "cover_image", "created_on"].includes(k)) {
+        if (req_obj[k] != null && req_obj[k] != "null") {
+          updat_str += ` ${k} = "${req_obj[k]}", `
+          console.log(k)
+        }
 
       }
     }
-  );
+    updat_str = updat_str.substring(0, updat_str.length - 2);
+    console.log(updat_str)
+    connection.query(
+      " " + updat_str + "  where id = '" + req_obj.id + "'",
+      (err, result) => {
+        if (err) {
+          res.status(500).send({ response: "error - opration failed", "status": false });
+          console.log(err)
+        } else {
+          result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull", "status": true })
+            : res.status(500).send({ response: "error - opration failed", "status": false })
+
+        }
+      }
+    );
+  } else {
+    res.send({ response: "please send product identity" })
+  }
 }
+
+
 
 export async function delete_product(req, res) {
 
@@ -113,7 +122,7 @@ export async function delete_product(req, res) {
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
       } else {
-        result.affectedRows == "1" ? res.status(StatusCodes.OK).json({ message: "delete successfully" }) : res.status(StatusCodes.OK).json({ message: "not delete " });
+        result.affectedRows == "1" ? res.status(StatusCodes.OK).json({ message: "delete successfully", "status": false }) : res.status(StatusCodes.OK).json({ message: "not delete ", "status": false });
 
       }
     }
@@ -183,7 +192,7 @@ export async function search_product(req, res) {
           (err, results) => {
             if (err) {
               //console.log(err)
-              res.status(502).send(err);
+              res.status(502).send({ "response": "find error" });
             } else {
               // //console.log("_____")
               var responsePayload = {

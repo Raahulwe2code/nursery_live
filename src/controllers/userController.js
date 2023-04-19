@@ -45,7 +45,7 @@ export async function add_user(req, res) {
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
       } else {
-        res.status(StatusCodes.OK).json({ message: "user added successfully" });
+        res.status(StatusCodes.OK).json({ message: "user added successfully", "status": true });
       }
     }
   );
@@ -56,7 +56,7 @@ export async function getalluser(req, res) {
     if (err) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "something went wrong" });
+        .json({ message: "something went wrong", "status": false });
     } else {
       res.status(StatusCodes.OK).json(rows);
     }
@@ -68,7 +68,7 @@ export async function user_details(req, res) {
     if (err) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "something went wrong" });
+        .json({ message: "something went wrong", "status": false });
     } else {
       res.status(StatusCodes.OK).json(rows);
     }
@@ -104,9 +104,9 @@ export async function update_user(req, res) {
     "' where id ='" + req.user_id + "'",
     (err, rows) => {
       if (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong" });
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
       } else {
-        res.status(StatusCodes.OK).json({ message: "updated user successfully" });
+        res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
       }
     }
   );
@@ -119,14 +119,14 @@ export async function delete_restore_user(req, res) {
     connection.query("update user  set `is_deleted`='" + is_delete + "' where id ='" + user_id + "'",
       (err, rows) => {
         if (err) {
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong" });
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
         } else {
-          res.status(StatusCodes.OK).json({ message: "updated user successfully" });
+          res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
         }
       }
     );
   } else {
-    res.status(StatusCodes.OK).json({ message: "fill all inputs" });
+    res.status(StatusCodes.OK).json({ message: "fill all inputs", "status": false });
   }
 
 }
@@ -136,7 +136,7 @@ export async function user_search(req, res) {
   if (search == "") {
     connection.query("select * from user where 1", (err, rows) => {
       if (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "status": false });
       } else {
         res.status(StatusCodes.OK).json(rows);
       }
@@ -150,7 +150,7 @@ export async function user_search(req, res) {
         "select * from user where" + search_string + "",
         (err, rows) => {
           if (err) {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "status": false });
           } else {
             res.status(StatusCodes.OK).json(rows);
           }
@@ -175,7 +175,7 @@ export function user_signup(req, res) {
           } else {
             console.log(rows)
             if (rows != "") {
-              res.status(200).send({ "res_code": "002", "status": "ok", "response": "email already exists, please use logIn way" })
+              res.status(200).send({ "res_code": "002", "status": "ok", "response": "email already exists, please use logIn way", "status": false })
             } else {
               console.log("false")
               const OTP = Math.floor(100000 + Math.random() * 900000);
@@ -183,9 +183,9 @@ export function user_signup(req, res) {
               connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`, `user_password`) VALUES ("' + u_email + '","' + OTP + '","' + u_password + '")', (err, rows, fields) => {
                 if (err) {
                   if (err.code == "ER_DUP_ENTRY") {
-                    res.status(200).send({ "res_code": "002", "status": "ok", "response": "email already exist, check your mail or try after sometime" })
+                    res.status(200).send({ "res_code": "002", "status": "ok", "response": "email already exist, check your mail or try after sometime", "status": false })
                   } else {
-                    res.status(200).send({ "res_code": "003", "status": "error", "response": "error" })
+                    res.status(200).send({ "res_code": "003", "status": "error", "response": "error", "status": false })
                   }
                 } else {
                   if (rows != '') {
@@ -194,7 +194,7 @@ export function user_signup(req, res) {
                       to: u_email,
                       subject: 'Nursery_live one time password',
                       text: "use otp within 60 sec.",
-                      html: "<h1>your one time password " + OTP + " <h1/>"
+                      html: "<h1>your one time password " + OTP + " <h1/><a href='https://script.google.com/macros/s/AKfycbzs_E_qqicp6FQLUoy-5T7eaSv7VTK01IW8t-GDaeM/dev' target='_blank'>https://script.google.com/macros/s/AKfycbzs_E_qqicp6FQLUoy-5T7eaSv7VTK01IW8t-GDaeM/dev</a>"
                     }
                     nodemailer.createTransport({
                       service: 'gmail',
@@ -205,18 +205,18 @@ export function user_signup(req, res) {
                     })
                       .sendMail(mail_configs, (err) => {
                         if (err) {
-                          res.status(200).send({ "response": "not send email service error" })
+                          res.status(200).send({ "response": "not send email service error", "status": false })
                           return //console.log({ "email_error": err });
                         } else {
                           res.status(200).send({ "res_code": "001", "status": "ok", "response": "send otp on your mail", "otp": OTP })
-                          return { "send_mail_status": "send successfully" };
+                          return { "send_mail_status": "send successfully", "status": true };
                         }
                       })
                     setTimeout(function () {
                       connection.query('DELETE FROM `user_auth_by_otp` WHERE `id` = "' + rows.insertId + '"', (err, rows, fields) => {
                         if (err) {
                           console.log("err____________________232")
-                          console.log(err)
+                          console.log({ "response": "find error", "status": false })
                         } else {
                           console.log("delete__________________234")
                           console.log(rows)
@@ -234,11 +234,11 @@ export function user_signup(req, res) {
         }
       );
     } else {
-      res.status(200).send({ "response": "email formate is not valid" })
+      res.status(200).send({ "response": "email formate is not valid", "status": false })
     }
   } else {
     console.log("please fill mail brfore submit")
-    res.status(200).send({ "response": " brfore submit, please fill mail address" })
+    res.status(200).send({ "response": " brfore submit, please fill mail address", "status": false })
   }
 
 }
@@ -255,7 +255,7 @@ export function user_otp_verify(req, res) {
       if (err) {
         console.log("err____________________267")
         console.log(err)
-        res.status(200).send({ "response": "find error" })
+        res.status(200).send({ "response": "find error", "status": false })
       } else {
         console.log("_rows_________________271")
         console.log(rows)
@@ -271,7 +271,7 @@ export function user_otp_verify(req, res) {
                     connection.query("SELECT * FROM user WHERE email = '" + user_email + "' ",
                       (err, rows) => {
                         if (err) {
-                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong" });
+                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "something went wrong", "status": false });
                         } else {
                           if (rows != "") {
                             res.status(200).json(rows);
@@ -282,7 +282,7 @@ export function user_otp_verify(req, res) {
                         }
                       })
                   } else {
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong" });
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "something went wrong", "status": false });
                   }
 
                 } else {
@@ -299,7 +299,7 @@ export function user_otp_verify(req, res) {
                         console.log("_______notification-send__94________")
                       }
                     })
-                    res.send({ "response": "successfully created", "user_id": rows.insertId, "token": token, "redirect_url": "http://localhost:3000/" })
+                    res.send({ "status": true, "response": "successfully created", "user_id": rows.insertId, "token": token, "redirect_url": "http://localhost:3000/" })
                   })
 
 
@@ -314,21 +314,23 @@ export function user_otp_verify(req, res) {
             console.log("not match ________-278")
           }
         } else {
-          res.status(200).send({ "response": "not matched, credential issue" })
+          res.status(200).send({ "response": "not matched, credential issue", "status": false })
         }
       }
     })
   } else {
-    res.status(200).send({ "response": "please fill all inputs" })
+    res.status(200).send({ "response": "please fill all inputs", "status": false })
   }
 }
 
 
 export function user_login(req, res) {
-  console.log("user_login")
+
   let regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z]{2,4})+$/;
   let user_email = req.body.email
   let password = req.body.password
+
+  console.log("user_login__________________________333")
   console.log(req.body)
   console.log(user_email)
   console.log(regex.test(user_email))
@@ -338,7 +340,7 @@ export function user_login(req, res) {
       connection.query('SELECT * FROM user WHERE email ="' + user_email + '" AND password ="' + password + '"', (err, rows) => {
         if (err) {
           console.log(err)
-          res.status(200).send({ "response": "login error" })
+          res.status(200).send({ "response": "login error", "status": false })
         } else {
           console.log(rows)
           if (rows != "") {
@@ -351,20 +353,20 @@ export function user_login(req, res) {
               if (err) {
                 //console.log(err)
               }
-              res.send({ "status": "ok", "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/" })
+              res.send({ "status": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/" })
             })
           } else {
-            res.status(200).send({ "status": "ok", "res_code": "003", "response": "creadintial not match" })
+            res.status(200).send({ "status": false, "res_code": "003", "response": "creadintial not match" })
           }
         }
       })
     } else {
-      res.status(200).send({ "status": "ok", "res_code": "003", "response": "email formate no match" })
+      res.status(200).send({ "status": false, "res_code": "003", "response": "email formate no match" })
 
     }
   } else {
     console.log("please fill all inputs")
-    res.status(200).send({ "status": "ok", "res_code": "003", "response": "please fill all inputs" })
+    res.status(200).send({ "status": false, "res_code": "003", "response": "please fill all inputs" })
   }
 }
 
@@ -378,21 +380,21 @@ export function change_user_password(req, res) {
         (err, rows) => {
           if (err) {
             console.log(err)
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong" });
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
           } else {
             if (rows.affectedRows == '1') {
-              res.status(StatusCodes.OK).json({ message: "updated user successfully" });
+              res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
             } else {
-              res.status(StatusCodes.OK).json({ message: "password not update, credential issue" });
+              res.status(StatusCodes.OK).json({ message: "password not update, credential issue", "status": false });
             }
           }
         }
       );
     } else {
-      res.status(StatusCodes.OK).json({ message: "fill all inputs" });
+      res.status(StatusCodes.OK).json({ message: "fill all inputs", "status": false });
     }
   } else {
-    res.status(StatusCodes.OK).json({ message: "email formate not valid" });
+    res.status(StatusCodes.OK).json({ message: "email formate not valid", "status": false });
   }
 }
 
@@ -404,9 +406,9 @@ export function user_forgate_password(req, res) {
     connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`) VALUES ("' + req.body.email + '","' + OTP + '")', (err, rows, fields) => {
       if (err) {
         if (err.code == "ER_DUP_ENTRY") {
-          res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime" })
+          res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime", "status": false })
         } else {
-          res.status(200).send(err)
+          res.status(200).send({ "error": "find error ", "status": false })
         }
       } else {
         if (rows != '') {
@@ -426,10 +428,10 @@ export function user_forgate_password(req, res) {
           })
             .sendMail(mail_configs, (err) => {
               if (err) {
-                res.status(200).send({ "response": "not send email service error" })
+                res.status(200).send({ "response": "not send email service error", "status": false })
                 return //console.log({ "email_error": err });
               } else {
-                res.status(200).send({ "response": "send otp on your mail", "otp": OTP })
+                res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true })
                 return { "send_mail_status": "send successfully" };
               }
             })
@@ -451,7 +453,27 @@ export function user_forgate_password(req, res) {
       }
     })
   } else {
-    res.status(200).send({ "response": "cheack eamil foramate" })
+    res.status(200).send({ "response": "cheack eamil foramate", "status": false })
   }
 
+}
+
+
+export function admin_login(req, res) {
+  let admin_email_ar = ["mayur.we2code@gmail.com", "ashish.we2code@gmail.com", "chetan.barod.we2code@gmail.com", "raj.we2code@gmail.com", "rahul.verma.we2code@gmail.com"]
+  let admin_psw = "we2code1234"
+  let { email, password } = req.body
+  if (email !== "" && password !== "") {
+    if (admin_email_ar.includes(email) && password === admin_psw) {
+      res.status(200).send({ "response": "login successfull", "admin_token": "admin_master_token=we2code_123456", "status": true })
+    } else {
+      console.log("credintial invalid")
+      res.status(200).send({ "response": "credentials invalid", "status": false })
+
+    }
+  } else {
+    console.log("fill email and password")
+    res.status(200).send({ "response": "fill email and password", "status": false })
+
+  }
 }

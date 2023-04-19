@@ -72,7 +72,7 @@ export async function add_order(req, res) {
                     "' )",
                     (err, rows) => {
                       if (err) {
-                        res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
+                        res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
                       } else {
 
                         connection.query(
@@ -81,7 +81,7 @@ export async function add_order(req, res) {
                           (err, result) => {
                             if (err) {
                               console.log(err)
-                              res.status(500).send(err);
+                              res.status(500).send({ "response": "find error", "status": false });
                             } else {
                               // res.status(200).json({ message: result });
                             }
@@ -115,12 +115,12 @@ export async function add_order(req, res) {
                               return { "send_mail_status": "send successfully" };
                             }
                           })
-                        res.status(StatusCodes.OK).json({ "status": "ok", "order_id": orderno, "response": "order successfully added", "id": rows.insertId });
+                        res.status(StatusCodes.OK).json({ "status": "ok", "order_id": orderno, "response": "order successfully added", "id": rows.insertId, "status": true });
                       }
                     }
                   );
                 } else {
-                  res.send({ "response": "product stock unavailable" })
+                  res.send({ "response": "product stock unavailable", "status": false })
                 }
 
               }
@@ -129,7 +129,7 @@ export async function add_order(req, res) {
 
         } else {
           console.log("false")
-          res.status(200).send({ response: "please complete your profile" })
+          res.status(200).send({ response: "please complete your profile", "status": false })
 
         }
 
@@ -154,7 +154,7 @@ export async function order_list(req, res) {
   }
   connection.query(str_order, (err, rows) => {
     if (err) {
-      res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
+      res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
     } else {
       res.status(StatusCodes.OK).json(rows);
     }
@@ -256,9 +256,9 @@ export async function order_search(req, res) {
   console.log(req.user_id)
   if (req.for_ == 'admin') {
     if (req.body.user_id != '' && req.body.user_id != undefined) {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_1 FROM order_view_1 where '
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_1 where'
     } else {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_1 FROM order_view_1 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_1 where'
     }
   } else {
     if (req.for_ == 'user') {
@@ -272,16 +272,16 @@ export async function order_search(req, res) {
   for (var i = 0; i <= search_obj.length - 1; i++) {
     if (i == 0) {
       if (req.body[search_obj[i]] != "") {
-        search_string += `name LIKE "%${req.body[search_obj[i]]}%" AND `
+        search_string += ` name LIKE "%${req.body[search_obj[i]]}%" AND `
       }
     } else {
 
       if (req.body[search_obj[i]] != "") {
-        search_string += `${search_obj[i]} = "${req.body[search_obj[i]]}" AND `
+        search_string += ` ${search_obj[i]} = "${req.body[search_obj[i]]}" AND `
       }
     }
     if (i === search_obj.length - 1) {
-      search_string = search_string.substring(0, search_string.length - 4);
+      search_string = search_string.substring(0, search_string.length - 5);
     }
   }
 
@@ -367,7 +367,7 @@ export function order_status_update(req, res) {
           (err, result) => {
             if (err) {
               console.log(err)
-              res.status(500).send(err);
+              res.status(500).send({ "response": "find error", "status": false });
             } else {
               const mail_configs = {
                 from: 'ashish.we2code@gmail.com',
@@ -390,7 +390,13 @@ export function order_status_update(req, res) {
                     return { "send_mail_status": "send successfully" };
                   }
                 })
-              res.status(200).json({ "response": "status updated successfully" });
+              console.log(result)
+              if (result.affectedRows == '1') {
+                res.status(200).json({ "response": "status updated successfully", "res_db": result, "status": true });
+              } else {
+                res.status(200).json({ "response": "status update opration failed", "res_db": result, "status": false });
+              }
+
             }
           }
         );

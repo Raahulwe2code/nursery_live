@@ -2,7 +2,7 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function add_to_cart(req, res) {
-  var { user_id, product_id, cart_product_quantity } = req.body;
+  var { product_id, cart_product_quantity } = req.body;
 
   connection.query(
     "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
@@ -56,29 +56,29 @@ export async function cartById(req, res) {
 }
 
 export async function cart_update(req, res) {
-  var { user_id, product_id, cart_product_quantity } = req.body;
-  const id = req.params.id;
+  var { id, product_id, cart_product_quantity } = req.body;
   connection.query(
-    "update cart set product_id='" + product_id + "',cart_product_quantity='" + cart_product_quantity + "' where id ='" + id + "' AND user_id='" + user_id + "'", (err, rows) => {
+    "update cart set product_id='" + product_id + "',cart_product_quantity='" + cart_product_quantity + "' where id ='" + id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
       if (err) {
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ message: "something went wrong" });
+          .json({ "message": "something went wrong" });
       } else {
-        res.status(StatusCodes.OK).json({ message: "cart updated" });
+        rows.affectedRows == "1" ? res.status(200).json({ "response": rows, "message": "update successfull" }) : res.status(200).json({ "response": rows, "message": "update opration failed" })
+
       }
     }
   );
 }
 
 export async function cart_delete(req, res) {
-  const { id, user_id } = req.body
+  const { id } = req.body
 
-  connection.query("delete from cart where id ='" + id + "' AND user_id='" + user_id + "'", (err, rows) => {
+  connection.query("delete from cart where id ='" + id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
     if (err) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "delete opration failed" });
     } else {
-      res.status(StatusCodes.OK).json(rows);
+      rows.affectedRows == "1" ? res.status(200).json({ "response": rows, "message": "delete successfull" }) : res.status(200).json({ "response": rows, "message": "delete opration failed" })
     }
   });
 }
