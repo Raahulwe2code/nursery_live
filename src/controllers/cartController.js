@@ -3,25 +3,62 @@ import { StatusCodes } from "http-status-codes";
 
 export async function add_to_cart(req, res) {
   var { product_id, cart_product_quantity } = req.body;
-
-  connection.query(
-    "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
-    req.user_id +
-    "', '" +
-    product_id +
-    "','" +
-    cart_product_quantity +
-    "')",
-    (err, rows) => {
-      if (err) {
-        res
-          .status(StatusCodes.INSUFFICIENT_STORAGE)
-          .json({ message: "something went wrong" });
-      } else {
-        res.status(StatusCodes.OK).json(rows);
+  const check = parseInt(cart_product_quantity)
+  console.log(req.body)
+  console.log(check < 1)
+  if (check == "0") {
+    res.status(200).send({ "success": false, "response": "please cart quantity add greater then 1" })
+  } else {
+    connection.query("SELECT * FROM cart WHERE user_id =" + req.user_id + " AND product_id = " + product_id + " ",
+      (err, rows) => {
+        if (err) {
+          console.log("err---------------------13-----")
+          console.log(err)
+          res
+            .status(StatusCodes.INSUFFICIENT_STORAGE)
+            .json({ "success": false, "response": "something went wrong" });
+        } else {
+          if (rows != "") {
+            connection.query(
+              "update cart set cart_product_quantity='" + cart_product_quantity + "' where user_id='" + req.user_id + "' AND product_id='" + product_id + "'", (err, rows) => {
+                if (err) {
+                  console.log("err---------------------21-----")
+                  console.log(err)
+                  res
+                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .json({ "response": "something went wrong", "success": false });
+                } else {
+                  rows.affectedRows == "1" ? res.status(200).json({ "response": "update successfull", "success": true }) : res.status(200).json({ "response": "something went wrong", "success": false })
+                }
+              }
+            );
+          } else {
+            connection.query(
+              "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
+              req.user_id +
+              "', '" +
+              product_id +
+              "','" +
+              cart_product_quantity +
+              "')",
+              (err, rows) => {
+                if (err) {
+                  console.log("err---------------------42-----")
+                  console.log(err)
+                  res
+                    .status(StatusCodes.INSUFFICIENT_STORAGE)
+                    .json({ "success": false, "response": "something went wrong" });
+                } else {
+                  res.status(StatusCodes.OK).json({ "success": true, "response": "add product successfull" });
+                }
+              }
+            );
+          }
+        }
       }
-    }
-  );
+    );
+  }
+
 }
 
 export function cart_list(req, res) {
@@ -30,8 +67,10 @@ export function cart_list(req, res) {
   console.log(str_cart)
   connection.query(str_cart, (err, rows) => {
     if (err) {
+      console.log("err---------------------63-----")
+      console.log(err)
       res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .status(200)
         .json({ message: "something went wrong" });
     } else {
       res.status(StatusCodes.OK).json(rows);
@@ -45,6 +84,8 @@ export async function cartById(req, res) {
     "select * from cart where id= '" + id + "' ",
     (err, rows) => {
       if (err) {
+        console.log("err---------------------78-----")
+        console.log(err)
         res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ message: "something went wrong" });
@@ -56,29 +97,47 @@ export async function cartById(req, res) {
 }
 
 export async function cart_update(req, res) {
-  var { id, product_id, cart_product_quantity } = req.body;
-  connection.query(
-    "update cart set product_id='" + product_id + "',cart_product_quantity='" + cart_product_quantity + "' where id ='" + id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
+  var { product_id, cart_product_quantity } = req.body;
+  const check_1 = parseInt(cart_product_quantity)
+  if (check_1 < 1) {
+    connection.query("delete from cart where product_id ='" + product_id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
       if (err) {
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ "message": "something went wrong" });
+        console.log("err---------------------94-----")
+        console.log(err)
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "delete opration failed", "success": false });
       } else {
-        rows.affectedRows == "1" ? res.status(200).json({ "response": rows, "message": "update successfull" }) : res.status(200).json({ "response": rows, "message": "update opration failed" })
-
+        rows.affectedRows == "1" ? res.status(200).json({ "response": "delete successfull", "success": true }) : res.status(200).json({ "response": "delete opration failed", "success": false })
       }
-    }
-  );
+    });
+  } else {
+    connection.query(
+      "update cart set cart_product_quantity='" + cart_product_quantity + "' where user_id='" + req.user_id + "' AND product_id='" + product_id + "'", (err, rows) => {
+        if (err) {
+          console.log("err---------------------105-----")
+          console.log(err)
+          res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ "response": "something went wrong", "success": false });
+        } else {
+          rows.affectedRows == "1" ? res.status(200).json({ "response": "update successfull", "success": true }) : res.status(200).json({ "response": "something went wrong", "success": false })
+
+        }
+      }
+    );
+  }
+
 }
 
 export async function cart_delete(req, res) {
-  const { id } = req.body
+  const { product_id } = req.body
 
-  connection.query("delete from cart where id ='" + id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
+  connection.query("delete from cart where product_id ='" + product_id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
     if (err) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "delete opration failed" });
+      console.log("err---------------------125-----")
+      console.log(err)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "delete opration failed", "success": false });
     } else {
-      rows.affectedRows == "1" ? res.status(200).json({ "response": rows, "message": "delete successfull" }) : res.status(200).json({ "response": rows, "message": "delete opration failed" })
+      rows.affectedRows == "1" ? res.status(200).json({ "response": "delete successfull", "success": true }) : res.status(200).json({ "response": "delete opration failed", "success": false })
     }
   });
 }

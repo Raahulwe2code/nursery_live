@@ -6,7 +6,7 @@ import {
   cart_list,
   cart_update,
 } from "../controllers/cartController.js";
-import { auth_user, fetch_user, admin_auth } from '../../middleware/auth.js'
+import { auth_user, fetch_user } from '../../middleware/auth.js'
 const cartRouter = express.Router();
 cartRouter.post("/add_to_cart", auth_user, add_to_cart);
 cartRouter.get("/cart_list", auth_user, cart_list);

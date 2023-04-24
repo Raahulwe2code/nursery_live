@@ -19,7 +19,7 @@ export function add_product_image(req, res) {
       console.log(err)
     }
     //console.log(item.vendor_id)
-    connection.query('INSERT INTO `product_images`(`product_id`, `product_description`,`product_image_name`, `product_image_path`, `image_position`) VALUES ("' + item.product_id + '", "' + item.product_description + '", "' + name_str + '.png", "http://192.168.29.108:8888/product_images/' + name_str + '.png", "' + item.image_position + '")', (err, rows, fields) => {
+    connection.query('INSERT INTO `product_images`(`product_id`, `product_description`,`product_image_name`, `product_image_path`, `image_position`) VALUES ("' + item.product_id + '", "' + item.product_description + '", "' + name_str + '.png", "http://192.168.29.109:8888/product_images/' + name_str + '.png", "' + item.image_position + '")', (err, rows, fields) => {
       if (err) {
         console.log(err)
         //res.status(200).send(err)
@@ -53,7 +53,7 @@ export function product_image_update(req, res) {
     }
 
     //console.log(item.vendor_id)
-    connection.query(' UPDATE `product_images` SET `product_description`="' + item.product_description + '",`product_image_name`="' + name_str + '.png",`product_image_path`= "http://192.168.29.108:8888/product_images/' + name_str + '.png",`image_position`="' + item.image_position + '" WHERE product_image_id = "' + item.product_image_id + '" AND product_id = "' + item.product_id + '"', (err, rows, fields) => {
+    connection.query(' UPDATE `product_images` SET `product_description`="' + item.product_description + '",`product_image_name`="' + name_str + '.png",`product_image_path`= "http://192.168.29.109:8888/product_images/' + name_str + '.png",`image_position`="' + item.image_position + '" WHERE product_image_id = "' + item.product_image_id + '" AND product_id = "' + item.product_id + '"', (err, rows, fields) => {
       if (err) {
         console.log(err)
         //res.status(200).send(err)
@@ -68,6 +68,8 @@ export function product_image_update(req, res) {
     }
   })
 }
+
+
 
 export function product_image(req, res) {
   var { product_id, product_image_id } = req.body
@@ -99,8 +101,24 @@ export function product_image(req, res) {
 
 }
 
+
+export function add_remove_cover_image(req, res) {
+  var { image_position, product_image_id, product_id } = req.body
+  connection.query(' UPDATE `product_images` SET `image_position`="' + image_position + '" WHERE product_image_id = "' + product_image_id + '" AND product_id = "' + product_id + '"', (err, rows, fields) => {
+    if (err) {
+      console.log(err)
+      res.status(200).send({ success: false, message: "opration failed" })
+    } else {
+      console.log(rows)
+      rows.affectedRows ? res.status(200).send({ success: true, message: "updated successfull" }) : res.status(200).send({ success: false, message: "opration failed" })
+    }
+  })
+}
+
+
 export function product_image_delete(req, res) {
   var { product_image_id, product_id, product_image_name } = req.body
+
   connection.query('DELETE FROM `product_images` WHERE `product_image_id` = ' + product_image_id + ' AND product_id = ' + product_id + '', (err, rows, fields) => {
     if (err) {
       console.log(err)

@@ -26,12 +26,13 @@ app.use(cors());
 app.use(express.json({ limit: '90mb' }));
 app.use(bodyParser.json());
 // to support JSON-encoded bodies
-app.use(
-  bodyParser.urlencoded({
-    // to support URL-encoded bodies
-    extended: true,
-  })
-);
+// app.use(
+//   bodyParser.urlencoded({
+//     // to support URL-encoded bodies
+//     extended: true,
+//   })
+// );
+app.use(bodyParser.urlencoded({ limit: "90mb", extended: true, parameterLimit: 50000 }));
 
 app.use(express.static("public"));
 

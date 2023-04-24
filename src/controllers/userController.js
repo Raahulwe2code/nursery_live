@@ -85,6 +85,15 @@ export async function update_user(req, res) {
     address,
     alternate_address,
   } = req.body;
+
+  // console.log(req.file)
+  // console.log(req.file.filename)
+  if (req.file == undefined || req.file == '') {
+    var image = "no image"
+  } else {
+    var image = "http://192.168.29.109:8888/user_profile/" + req.file.filename;
+    //console.log(image)
+  }
   console.log(req.user_id)
   connection.query(
     "update user  set `first_name`= '" +
@@ -101,8 +110,10 @@ export async function update_user(req, res) {
     address +
     "', `alternate_address`='" +
     alternate_address +
-    "' where id ='" + req.user_id + "'",
+    "' , `image` = '" + image + "' where id ='" + req.user_id + "'",
     (err, rows) => {
+
+
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
       } else {
@@ -132,8 +143,9 @@ export async function delete_restore_user(req, res) {
 }
 
 export async function user_search(req, res) {
-  var { search } = req.body;
-  if (search == "") {
+  var { search, id } = req.body;
+  if (search == "" && id == "") {
+
     connection.query("select * from user where 1", (err, rows) => {
       if (err) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "status": false });
@@ -142,21 +154,27 @@ export async function user_search(req, res) {
       }
     });
   } else {
-    if (search !== "") {
-      var search_string = "";
-      search_string += ' `first_name` LIKE  "%' + search + '%" OR `email` LIKE "%' + search + '%" ';
-
-      connection.query(
-        "select * from user where" + search_string + "",
-        (err, rows) => {
-          if (err) {
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "status": false });
-          } else {
-            res.status(StatusCodes.OK).json(rows);
-          }
-        }
-      );
+    var search_string = "";
+    if (search != "") {
+      search_string += ' (`first_name` LIKE  "%' + search + '%" OR `email` LIKE "%' + search + '%") AND '
     }
+    if (id != "") {
+      search_string += ' id = "' + id + '" AND  '
+    }
+
+    search_string = search_string.substring(0, search_string.length - 5)
+    console.log(search_string)
+    connection.query(
+      "select * from user where" + search_string + "",
+      (err, rows) => {
+        if (err) {
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "status": false });
+        } else {
+          res.status(StatusCodes.OK).json(rows);
+        }
+      }
+    );
+
   }
 }
 
@@ -271,18 +289,21 @@ export function user_otp_verify(req, res) {
                     connection.query("SELECT * FROM user WHERE email = '" + user_email + "' ",
                       (err, rows) => {
                         if (err) {
-                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "something went wrong", "status": false });
+                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "something went wrong", "status": false });
                         } else {
                           if (rows != "") {
-                            res.status(200).json(rows);
+                            console.log("___________________________________________________284_chkkkkkkkkkkkkkkk=============")
+                            console.log(rows)
+                            jwt.sign({ id: rows[0].id }, process.env.USER_JWT_SECRET_KEY, function (err, token) {
+                              res.status(200).json({ "success": true, "token": token, "user_details": rows });
+                            })
                           } else {
-                            res.status(200).json(rows);
-
+                            res.status(200).json({ "success": false, "token": "" });
                           }
                         }
                       })
                   } else {
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "message": "something went wrong", "status": false });
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "something went wrong", "status": false });
                   }
 
                 } else {
@@ -299,7 +320,7 @@ export function user_otp_verify(req, res) {
                         console.log("_______notification-send__94________")
                       }
                     })
-                    res.send({ "status": true, "response": "successfully created", "user_id": rows.insertId, "token": token, "redirect_url": "http://localhost:3000/" })
+                    res.send({ "status": true, "response": "successfully created your account", "user_id": rows.insertId, "token": token, "redirect_url": "http://localhost:3000/" })
                   })
 
 
@@ -380,12 +401,12 @@ export function change_user_password(req, res) {
         (err, rows) => {
           if (err) {
             console.log(err)
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ response: "something went wrong", "success": false });
           } else {
             if (rows.affectedRows == '1') {
-              res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
+              res.status(StatusCodes.OK).json({ response: "updated user successfully", "success": true });
             } else {
-              res.status(StatusCodes.OK).json({ message: "password not update, credential issue", "status": false });
+              res.status(StatusCodes.OK).json({ response: "password not update, credential issue", "success": false });
             }
           }
         }
@@ -477,3 +498,22 @@ export function admin_login(req, res) {
 
   }
 }
+export function user_forgate_password_update(req, res) {
+  console.log("__________________user_forgate_password_update")
+  let psw = req.body.password.trim()
+  console.log(psw)
+  connection.query(
+    "update user  set `password`= '" + psw + "' where id ='" + req.user_id + "'",
+    (err, rows) => {
+      if (err) {
+        console.log(err)
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "something went wrong", "success": false });
+      } else {
+        console.log(rows.affectedRows)
+        if (rows.affectedRows == '1') { res.status(StatusCodes.OK).json({ "response": "update your password successfully", "success": true, "user_detaile": rows }); } else { res.status(StatusCodes.OK).json({ "response": "update opration feild ", "success": false }); }
+
+      }
+    }
+  );
+}
+

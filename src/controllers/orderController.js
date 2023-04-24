@@ -4,25 +4,13 @@ import nodemailer from "nodemailer"
 
 
 export async function add_order(req, res) {
-  var orderno = Math.floor(100000 + Math.random() * 900000);
+  let vendore_id_array = []
+  let order_no_obj = {}
+  let product_array = req.body
 
-  var {
-    product_id,
-    total_order_product_quantity,
-    total_amount,
-    total_gst,
-    total_cgst,
-    total_sgst,
-    total_discount,
-    shipping_charges,
-    invoice_id,
-    payment_mode,
-    payment_ref_id,
-    discount_coupon,
-    discount_coupon_value,
-  } = req.body;
   console.log("user_id=============================================22")
   console.log(req.user_id)
+  console.log(product_array)
 
   connection.query("SELECT * FROM user WHERE id='" + req.user_id + "'",
     (err, result) => {
@@ -32,100 +20,196 @@ export async function add_order(req, res) {
         // console.log(result)
         var { first_name, last_name, email, phone_no, pincode, city, address, alternate_address } = result[0]
         if (first_name != '' && last_name != '' && email != '' && phone_no != '' && pincode != '' && city != '' && address != '' && alternate_address != '') {
-          console.log("true")
-          connection.query("SELECT product_stock_quantity FROM product WHERE id='" + product_id + "'",
-            (err, result) => {
-              if (err) {
-                res.status(500).send(err);
-              } else {
-                console.log("________chk qty.")
-                console.log(result)
-                console.log(parseInt(result[0].product_stock_quantity))
-                var update_stock_qty = parseInt(result[0].product_stock_quantity) - parseInt(total_order_product_quantity)
-                console.log("--------------------update_stock_qty-----------------")
-                console.log(update_stock_qty)
-                if (update_stock_qty >= 0 && total_order_product_quantity > 0) {
-                  connection.query(
-                    "insert into `order` ( `order_id`, `product_id`,`user_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + orderno + "','" + product_id + "', '" + req.user_id + "','" + total_order_product_quantity +
-                    "','" +
-                    total_amount +
-                    "','" +
-                    total_gst +
-                    "','" +
-                    total_cgst +
-                    "','" +
-                    total_sgst +
-                    "','" +
-                    total_discount +
-                    "','" +
-                    shipping_charges +
-                    "','" +
-                    invoice_id +
-                    "','" +
-                    payment_mode +
-                    "','" +
-                    payment_ref_id +
-                    "','" +
-                    discount_coupon +
-                    "','" +
-                    discount_coupon_value +
-                    "' )",
-                    (err, rows) => {
-                      if (err) {
-                        res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
-                      } else {
+          console.log("true__________user")
 
-                        connection.query(
-                          // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
-                          "UPDATE `product` SET product_stock_quantity='" + update_stock_qty + "' WHERE id='" + product_id + "'",
-                          (err, result) => {
-                            if (err) {
-                              console.log(err)
-                              res.status(500).send({ "response": "find error", "status": false });
-                            } else {
-                              // res.status(200).json({ message: result });
-                            }
-                          }
-                        );
-                        connection.query('INSERT INTO `notification`(`actor_id`, `actor_type`, `message`, `status`) VALUES ("' + req.user_id + '","user","successfully placed order,order_no. ' + orderno + '","unread"),("001","admin","recived order (order_no. ' + orderno + ') by ' + first_name + ', user_id ' + req.user_id + '","unread")', (err, rows) => {
+
+
+          product_array.forEach((item, index) => {
+
+            console.log("_______item---------------44__" + index)
+            console.log(order_no_obj)
+            console.log(vendore_id_array)
+
+            if (vendore_id_array.includes(item["vendor_id"])) {
+
+              let order_no_old = order_no_obj[item["vendor_id"]]
+              connection.query("SELECT product_stock_quantity FROM product WHERE id='" + item["product_id"] + "'",
+                (err, result) => {
+                  if (err) {
+                    res.status(500).send(err);
+                  } else {
+                    console.log("________chk qty.")
+                    console.log(result)
+                    console.log(parseInt(result[0].product_stock_quantity))
+                    var update_stock_qty = parseInt(result[0].product_stock_quantity) - parseInt(item["total_order_product_quantity"])
+                    console.log("--------------------update_stock_qty-----------------")
+                    console.log(update_stock_qty)
+                    if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
+                      connection.query(
+                        "insert into `order` ( `order_id`, `product_id`,`user_id`, `vendor_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + order_no_old + "','" + item["product_id"] + "', '" + req.user_id + "','" + item["vendor_id"] + "','" + item["total_order_product_quantity"] +
+                        "','" +
+                        item["total_amount"] +
+                        "','" +
+                        item["total_gst"] +
+                        "','" +
+                        item["total_cgst"] +
+                        "','" +
+                        item["total_sgst"] +
+                        "','" +
+                        item["total_discount"] +
+                        "','" +
+                        item["shipping_charges"] +
+                        "','" +
+                        item["invoice_id"] +
+                        "','" +
+                        item["payment_mode"] +
+                        "','" +
+                        item["payment_ref_id"] +
+                        "','" +
+                        item["discount_coupon"] +
+                        "','" +
+                        item["discount_coupon_value"] +
+                        "' )",
+                        (err, rows) => {
                           if (err) {
-                            //console.log({ "notification": err })
+                            console.log(err)
+                            res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
                           } else {
-                            console.log("_______notification-send__94________")
-                          }
-                        })
-                        const mail_configs = {
-                          from: 'ashish.we2code@gmail.com',
-                          to: email,
-                          subject: 'order status ',
-                          text: "order added successfully",
-                          html: "<h1>order added successfully<h1/>"
-                        }
-                        nodemailer.createTransport({
-                          service: 'gmail',
-                          auth: {
-                            user: 'ashish.we2code@gmail.com',
-                            pass: 'nczaguozpagczmjv'
-                          }
-                        })
-                          .sendMail(mail_configs, (err) => {
-                            if (err) {
-                              return //console.log({ "email_error": err });
-                            } else {
-                              return { "send_mail_status": "send successfully" };
-                            }
-                          })
-                        res.status(StatusCodes.OK).json({ "status": "ok", "order_id": orderno, "response": "order successfully added", "id": rows.insertId, "status": true });
-                      }
-                    }
-                  );
-                } else {
-                  res.send({ "response": "product stock unavailable", "status": false })
-                }
 
-              }
+                            connection.query(
+                              // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
+                              "UPDATE `product` SET product_stock_quantity='" + update_stock_qty + "' WHERE id='" + item["product_id"] + "'",
+                              (err, result) => {
+                                if (err) {
+                                  console.log(err)
+                                  res.status(500).send({ "response": "find error", "status": false });
+                                } else {
+                                  // res.status(200).json({ message: result });
+                                }
+                              }
+                            );
+                            // send_emal-----------------etc.
+                            //resend--------------------
+                            console.log(rows)
+                            // res.send("okay")
+                          }
+                        }
+                      );
+                    } else {
+                      res.send({ "response": "product stock unavailable", "status": false })
+                    }
+
+                  }
+                }
+              )
+            } else {
+              let orderno = Math.floor(100000 + Math.random() * 900000);
+              vendore_id_array.push(item["vendor_id"])
+              order_no_obj[item["vendor_id"]] = orderno
+
+              connection.query("SELECT product_stock_quantity FROM product WHERE id='" + item["product_id"] + "'",
+                (err, result) => {
+                  if (err) {
+                    res.status(500).send(err);
+                  } else {
+                    console.log("________chk qty.")
+                    console.log(result)
+                    console.log(parseInt(result[0].product_stock_quantity))
+                    var update_stock_qty = parseInt(result[0].product_stock_quantity) - parseInt(item["total_order_product_quantity"])
+                    console.log("--------------------update_stock_qty-----------------")
+                    console.log(update_stock_qty)
+                    if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
+                      connection.query(
+                        "insert into `order` ( `order_id`, `product_id`,`user_id`, vendor_id, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + orderno + "','" + item["product_id"] + "', '" + req.user_id + "', '" + item["vendor_id"] + "', '" + item["total_order_product_quantity"] +
+                        "','" +
+                        item["total_amount"] +
+                        "','" +
+                        item["total_gst"] +
+                        "','" +
+                        item["total_cgst"] +
+                        "','" +
+                        item["total_sgst"] +
+                        "','" +
+                        item["total_discount"] +
+                        "','" +
+                        item["shipping_charges"] +
+                        "','" +
+                        item["invoice_id"] +
+                        "','" +
+                        item["payment_mode"] +
+                        "','" +
+                        item["payment_ref_id"] +
+                        "','" +
+                        item["discount_coupon"] +
+                        "','" +
+                        item["discount_coupon_value"] +
+                        "' )",
+                        (err, rows) => {
+                          if (err) {
+                            console.log(err)
+                            res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
+                          } else {
+
+                            connection.query(
+                              // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
+                              "UPDATE `product` SET product_stock_quantity='" + update_stock_qty + "' WHERE id='" + item["product_id"] + "'",
+                              (err, result) => {
+                                if (err) {
+                                  console.log(err)
+                                  res.status(500).send({ "response": "find error", "status": false });
+                                } else {
+                                  // res.status(200).json({ message: result });
+                                }
+                              }
+                            );
+                            // send_emal-----------------etc.
+                            //resend--------------------
+                            console.log(rows)
+                            // res.send("okay")
+                          }
+                        }
+                      );
+                    } else {
+                      res.send({ "response": "product stock unavailable", "status": false })
+                    }
+
+                  }
+                }
+              )
             }
-          );
+            if (index === product_array.length - 1) {
+              connection.query('INSERT INTO `notification`(`actor_id`, `actor_type`, `message`, `status`) VALUES ("' + req.user_id + '","user","successfully placed order,order_no=","unread"),("001","admin","recived order (order_no. =) by ' + first_name + ', user_id ' + req.user_id + '","unread")', (err, rows) => {
+                if (err) {
+                  //console.log({ "notification": err })
+                } else {
+                  console.log("_______notification-send__94________")
+                }
+              })
+              const mail_configs = {
+                from: 'ashish.we2code@gmail.com',
+                to: email,
+                subject: 'order status ',
+                text: "order added successfully",
+                html: "<h1>order added successfully<h1/>"
+              }
+              nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                  user: 'ashish.we2code@gmail.com',
+                  pass: 'nczaguozpagczmjv'
+                }
+              })
+                .sendMail(mail_configs, (err) => {
+                  if (err) {
+                    return //console.log({ "email_error": err });
+                  } else {
+                    return { "send_mail_status": "send successfully" };
+                  }
+                })
+              res.status(StatusCodes.OK).json({ "status": "ok", "response": "order successfully added", "order_id": order_no_obj, "success": true });
+
+            }
+          })
 
         } else {
           console.log("false")
@@ -164,7 +248,7 @@ export async function order_list(req, res) {
 export async function order_details(req, res) {
   const id = req.params.id;
   connection.query(
-    'select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_1 from `order_view` where order_id ="' + id + '" ',
+    'select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_2 from `order_view` where order_id ="' + id + '" ',
     (err, rows) => {
       if (err) {
         res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
@@ -256,14 +340,14 @@ export async function order_search(req, res) {
   console.log(req.user_id)
   if (req.for_ == 'admin') {
     if (req.body.user_id != '' && req.body.user_id != undefined) {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_1 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_2 where'
     } else {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_1 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_2 where'
     }
   } else {
     if (req.for_ == 'user') {
 
-      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_1 where user_id="' + req.user_id + '" AND '
+      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_2 where user_id="' + req.user_id + '" AND '
     }
   }
 
@@ -391,7 +475,7 @@ export function order_status_update(req, res) {
                   }
                 })
               console.log(result)
-              if (result.affectedRows == '1') {
+              if (result.affectedRows >= 1) {
                 res.status(200).json({ "response": "status updated successfully", "res_db": result, "status": true });
               } else {
                 res.status(200).json({ "response": "status update opration failed", "res_db": result, "status": false });

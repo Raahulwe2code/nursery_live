@@ -131,7 +131,7 @@ export async function delete_product(req, res) {
 
 export async function search_product(req, res) {
   var { price_from, price_to } = req.body;
-
+  console.log(req.body)
   // 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user + '") FROM products  AND '
 
 
@@ -139,7 +139,7 @@ export async function search_product(req, res) {
   let search_obj = Object.keys(req.body)
   console.log(req.user_id)
   if (req.user_id != "" && req.user_id != undefined) {
-    var search_string = 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user_id + '") AS cart,   (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
+    var search_string = 'SELECT *, (SELECT cart_product_quantity FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user_id + '") AS cart_count,   (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
   } else {
     var search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
   }
@@ -191,8 +191,9 @@ export async function search_product(req, res) {
         connection.query("" + search_string + " LIMIT " + limit + "",
           (err, results) => {
             if (err) {
-              //console.log(err)
-              res.status(502).send({ "response": "find error" });
+              console.log("err___________________194")
+              console.log(err)
+              res.status(200).send({ "response": "find error" });
             } else {
               // //console.log("_____")
               var responsePayload = {
