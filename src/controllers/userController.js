@@ -85,41 +85,55 @@ export async function update_user(req, res) {
     address,
     alternate_address,
   } = req.body;
-
+  let srt_user = ""
   // console.log(req.file)
   // console.log(req.file.filename)
   if (req.file == undefined || req.file == '') {
     var image = "no image"
+    srt_user = "update user  set `first_name`= '" +
+      first_name +
+      "' , `last_name`='" +
+      last_name +
+      "', `phone_no` ='" +
+      phone_no +
+      "', `pincode` ='" +
+      pincode +
+      "', `city`='" +
+      city +
+      "', `address`='" +
+      address +
+      "', `alternate_address`='" +
+      alternate_address +
+      "'  where id ='" + req.user_id + "'"
   } else {
     var image = "http://192.168.29.109:8888/user_profile/" + req.file.filename;
     //console.log(image)
+    srt_user = "update user  set `first_name`= '" +
+      first_name +
+      "' , `last_name`='" +
+      last_name +
+      "', `phone_no` ='" +
+      phone_no +
+      "', `pincode` ='" +
+      pincode +
+      "', `city`='" +
+      city +
+      "', `address`='" +
+      address +
+      "', `alternate_address`='" +
+      alternate_address +
+      "' , `image` = '" + image + "' where id ='" + req.user_id + "'"
   }
   console.log(req.user_id)
-  connection.query(
-    "update user  set `first_name`= '" +
-    first_name +
-    "' , `last_name`='" +
-    last_name +
-    "', `phone_no` ='" +
-    phone_no +
-    "', `pincode` ='" +
-    pincode +
-    "', `city`='" +
-    city +
-    "', `address`='" +
-    address +
-    "', `alternate_address`='" +
-    alternate_address +
-    "' , `image` = '" + image + "' where id ='" + req.user_id + "'",
-    (err, rows) => {
+  connection.query(srt_user, (err, rows) => {
 
 
-      if (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
-      } else {
-        res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
-      }
+    if (err) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
+    } else {
+      res.status(StatusCodes.OK).json({ message: "updated user successfully", "status": true });
     }
+  }
   );
 }
 

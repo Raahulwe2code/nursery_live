@@ -8,7 +8,7 @@ export async function add_order(req, res) {
   let order_no_obj = {}
   let product_array = req.body
 
-  console.log("user_id=============================================22")
+  console.log("user_id=============================================11")
   console.log(req.user_id)
   console.log(product_array)
 
@@ -20,31 +20,36 @@ export async function add_order(req, res) {
         // console.log(result)
         var { first_name, last_name, email, phone_no, pincode, city, address, alternate_address } = result[0]
         if (first_name != '' && last_name != '' && email != '' && phone_no != '' && pincode != '' && city != '' && address != '' && alternate_address != '') {
-          console.log("true__________user")
+          console.log("true_______line___23")
+          console.log("user_id=============================================24")
 
-
+          console.log(product_array)
 
           product_array.forEach((item, index) => {
 
-            console.log("_______item---------------44__" + index)
+            console.log("_______item-------------line--30__" + index)
+            console.log(item)
             console.log(order_no_obj)
             console.log(vendore_id_array)
 
             if (vendore_id_array.includes(item["vendor_id"])) {
 
               let order_no_old = order_no_obj[item["vendor_id"]]
+              console.log("++++++++++++++++++++++++++line---36___" + item["product_id"])
               connection.query("SELECT product_stock_quantity FROM product WHERE id='" + item["product_id"] + "'",
                 (err, result) => {
                   if (err) {
-                    res.status(500).send(err);
+                    console.log(err)
+                    // res.status(500).send(err);
                   } else {
                     console.log("________chk qty.")
                     console.log(result)
-                    console.log(parseInt(result[0].product_stock_quantity))
-                    var update_stock_qty = parseInt(result[0].product_stock_quantity) - parseInt(item["total_order_product_quantity"])
+                    console.log(parseInt(result[0]["product_stock_quantity"]))
+                    var update_stock_qty = parseInt(result[0]["product_stock_quantity"]) - parseInt(item["total_order_product_quantity"])
                     console.log("--------------------update_stock_qty-----------------")
                     console.log(update_stock_qty)
                     if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
+                      console.log("_____________update_stock_qty >= 0 && item[total_order_product_quantity] > 0________________line chek 52")
                       connection.query(
                         "insert into `order` ( `order_id`, `product_id`,`user_id`, `vendor_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + order_no_old + "','" + item["product_id"] + "', '" + req.user_id + "','" + item["vendor_id"] + "','" + item["total_order_product_quantity"] +
                         "','" +
@@ -60,7 +65,7 @@ export async function add_order(req, res) {
                         "','" +
                         item["shipping_charges"] +
                         "','" +
-                        item["invoice_id"] +
+                        order_no_old +
                         "','" +
                         item["payment_mode"] +
                         "','" +
@@ -73,16 +78,17 @@ export async function add_order(req, res) {
                         (err, rows) => {
                           if (err) {
                             console.log(err)
-                            res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
+                            res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false, "success": false });
                           } else {
-
+                            console.log("_____________________________line----83")
+                            console.log(rows)
                             connection.query(
                               // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
                               "UPDATE `product` SET product_stock_quantity='" + update_stock_qty + "' WHERE id='" + item["product_id"] + "'",
                               (err, result) => {
                                 if (err) {
                                   console.log(err)
-                                  res.status(500).send({ "response": "find error", "status": false });
+                                  // res.status(500).send({ "response": "find error", "status": false });
                                 } else {
                                   // res.status(200).json({ message: result });
                                 }
@@ -90,13 +96,24 @@ export async function add_order(req, res) {
                             );
                             // send_emal-----------------etc.
                             //resend--------------------
-                            console.log(rows)
+
                             // res.send("okay")
+                            connection.query('INSERT INTO order_detaile (`product_id`,`order_id`,`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on`) SELECT "' + item["product_id"] + '","' + order_no_old + '",`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on` FROM product WHERE id = ' + item["product_id"] + '', (err, result) => {
+                              if (err) {
+                                console.log(err)
+                                // res.status(500).send({ "response": "find error", "status": false });
+                              } else {
+                                console.log("______________product detaile insert  data___line_______106_")
+                                console.log(result)
+                              }
+                            }
+                            );
                           }
                         }
                       );
                     } else {
-                      res.send({ "response": "product stock unavailable", "status": false })
+                      // res.send({ "response": "product stock unavailable", "status": false })
+                      console.log({ "response": "product stock unavailable", "status": false })
                     }
 
                   }
@@ -112,12 +129,13 @@ export async function add_order(req, res) {
                   if (err) {
                     res.status(500).send(err);
                   } else {
-                    console.log("________chk qty.")
+                    console.log("________chk qty_____line___128.")
                     console.log(result)
-                    console.log(parseInt(result[0].product_stock_quantity))
-                    var update_stock_qty = parseInt(result[0].product_stock_quantity) - parseInt(item["total_order_product_quantity"])
+                    console.log(parseInt(result[0]["product_stock_quantity"]))
+                    var update_stock_qty = parseInt(result[0]["product_stock_quantity"]) - parseInt(item["total_order_product_quantity"])
                     console.log("--------------------update_stock_qty-----------------")
                     console.log(update_stock_qty)
+                    console.log("update_stock_qty >= 0 && item[total_order_product_quantity] > 0--------------line---138")
                     if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
                       connection.query(
                         "insert into `order` ( `order_id`, `product_id`,`user_id`, vendor_id, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + orderno + "','" + item["product_id"] + "', '" + req.user_id + "', '" + item["vendor_id"] + "', '" + item["total_order_product_quantity"] +
@@ -134,7 +152,7 @@ export async function add_order(req, res) {
                         "','" +
                         item["shipping_charges"] +
                         "','" +
-                        item["invoice_id"] +
+                        orderno +
                         "','" +
                         item["payment_mode"] +
                         "','" +
@@ -149,19 +167,33 @@ export async function add_order(req, res) {
                             console.log(err)
                             res.status(StatusCodes.INSUFFICIENT_STORAGE).json({ "response": "find error", "status": false });
                           } else {
-
+                            console.log("rows=====170")
+                            console.log(rows)
                             connection.query(
                               // UPDATE `product` SET `product_stock_quantity` = '11' WHERE `product`.`id` = 16;
                               "UPDATE `product` SET product_stock_quantity='" + update_stock_qty + "' WHERE id='" + item["product_id"] + "'",
                               (err, result) => {
                                 if (err) {
                                   console.log(err)
-                                  res.status(500).send({ "response": "find error", "status": false });
+                                  // res.status(500).send({ "response": "find error", "status": false });
                                 } else {
                                   // res.status(200).json({ message: result });
                                 }
                               }
                             );
+
+
+                            connection.query('INSERT INTO order_detaile (`product_id`,`order_id`,`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on`) SELECT "' + item["product_id"] + '","' + orderno + '",`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on` FROM product WHERE id = ' + item["product_id"] + '', (err, result) => {
+                              if (err) {
+                                console.log(err)
+                                // res.status(500).send({ "response": "find error", "status": false });
+                              } else {
+                                console.log("______________product detaile insert  data___________176")
+                                console.log(result)
+                              }
+                            }
+                            );
+
                             // send_emal-----------------etc.
                             //resend--------------------
                             console.log(rows)
@@ -170,7 +202,8 @@ export async function add_order(req, res) {
                         }
                       );
                     } else {
-                      res.send({ "response": "product stock unavailable", "status": false })
+                      // res.send({ "response": "product stock unavailable", "status": false })
+                      console.log({ "response": "product stock unavailable", "status": false })
                     }
 
                   }
@@ -206,14 +239,18 @@ export async function add_order(req, res) {
                     return { "send_mail_status": "send successfully" };
                   }
                 })
-              res.status(StatusCodes.OK).json({ "status": "ok", "response": "order successfully added", "order_id": order_no_obj, "success": true });
+              var order_ar = []
+              for (var k in order_no_obj) {
+                order_ar.push(order_no_obj[k])
+              }
+              res.status(StatusCodes.OK).json({ "status": "ok", "response": "order successfully added", "order_id": order_ar, "success": true });
 
             }
           })
 
         } else {
           console.log("false")
-          res.status(200).send({ response: "please complete your profile", "status": false })
+          res.status(200).send({ response: "please complete your profile", "status": false, "success": false })
 
         }
 
@@ -246,17 +283,45 @@ export async function order_list(req, res) {
 }
 
 export async function order_details(req, res) {
-  const id = req.params.id;
-  connection.query(
-    'select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_2 from `order_view` where order_id ="' + id + '" ',
+  const id = req.query.id;
+  let resp_obj = {}
+  connection.query('select * from `order` where order_id ="' + id + '" AND user_id ="' + req.user_id + '"',
     (err, rows) => {
       if (err) {
         res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
       } else {
-        res.status(StatusCodes.OK).json(rows);
+        if (rows != "") {
+          resp_obj["success"] = true
+          resp_obj["order_detaile"] = rows
+
+          connection.query('select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_detaile.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_detaile.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_detaile where order_id =' + id + '',
+            (err, rows) => {
+              if (err) {
+                res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
+              } else {
+                resp_obj["success"] = true
+                resp_obj["order_product_detaile"] = rows
+                // res.status(StatusCodes.OK).json(resp_obj);
+
+                connection.query("select * from user where id= '" + req.user_id + "'", (err, rows) => {
+                  if (err) {
+                    res
+                      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                      .json({ message: "something went wrong", "status": false });
+                  } else {
+                    resp_obj["user_detaile"] = rows
+                    res.status(StatusCodes.OK).json(resp_obj);
+                  }
+                })
+              }
+            }
+          );
+        } else {
+          res.status(200).json({ "success": false, "response": "not found" });
+        }
       }
     }
-  );
+  )
 }
 
 export async function order_update(req, res) {
@@ -340,14 +405,14 @@ export async function order_search(req, res) {
   console.log(req.user_id)
   if (req.for_ == 'admin') {
     if (req.body.user_id != '' && req.body.user_id != undefined) {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_2 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_3 where'
     } else {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_2 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_3 where'
     }
   } else {
     if (req.for_ == 'user') {
 
-      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_2.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_2 where user_id="' + req.user_id + '" AND '
+      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_3 where user_id="' + req.user_id + '" AND '
     }
   }
 
@@ -488,3 +553,6 @@ export function order_status_update(req, res) {
     })
 
 }
+
+
+

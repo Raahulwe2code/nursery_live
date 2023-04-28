@@ -11,40 +11,44 @@ export async function addproduct(req, res) {
   console.log(n_mrp + " > " + n_price)
   console.log(n_mrp > n_price)
   if (n_mrp > n_price) {
-    connection.query(
-      ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`mrp`,`gst`,`sgst`,`cgst`,`category`,`review`,`discount`,`rating`,`description`) values ("' +
-      vendor_id +
-      '","' +
-      name +
-      '","' + seo_tag + '","' + brand + '","' + quantity + '","' + unit + '","' + product_stock_quantity + '","' +
-      price +
-      '","' + mrp + '","' +
-      gst +
-      '","' +
-      sgst +
-      '","' +
-      cgst +
-      '","' +
-      category +
-      '","' +
-      review +
-      '","' +
-      discount +
-      '", "' +
-      rating +
-      '","' +
-      description +
-      '") ',
-      (err, result) => {
-        if (err) {
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ "response": "find error", "status": false });
-        } else {
-          console.log("chk------------------70")
-          console.log(result)
-          res.status(StatusCodes.OK).json({ "response": "add successfull", "message": result, "status": true });
+    if (req.vendor_id != "" && req.vendor_id != undefined) {
+      connection.query(
+        ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`mrp`,`gst`,`sgst`,`cgst`,`category`,`review`,`discount`,`rating`,`description`) values ("' +
+        req.vendor_id +
+        '","' +
+        name +
+        '","' + seo_tag + '","' + brand + '","' + quantity + '","' + unit + '","' + product_stock_quantity + '","' +
+        price +
+        '","' + mrp + '","' +
+        gst +
+        '","' +
+        sgst +
+        '","' +
+        cgst +
+        '","' +
+        category +
+        '","' +
+        review +
+        '","' +
+        discount +
+        '", "' +
+        rating +
+        '","' +
+        description +
+        '") ',
+        (err, result) => {
+          if (err) {
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ "response": "find error", "status": false });
+          } else {
+            console.log("chk------------------70")
+            console.log(result)
+            res.status(StatusCodes.OK).json({ "response": "add successfull", "message": result, "status": true });
+          }
         }
-      }
-    );
+      );
+    } else {
+      res.send({ "response": "vendor_id undifined", "status": false })
+    }
   } else {
     res.send({ "response": "product price is always less then product MRP", "status": false })
   }
@@ -93,39 +97,73 @@ export async function update_Product(req, res) {
       }
     }
     updat_str = updat_str.substring(0, updat_str.length - 2);
-    console.log(updat_str)
-    connection.query(
-      " " + updat_str + "  where id = '" + req_obj.id + "'",
-      (err, result) => {
-        if (err) {
-          res.status(500).send({ response: "error - opration failed", "status": false });
-          console.log(err)
-        } else {
-          result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull", "status": true })
-            : res.status(500).send({ response: "error - opration failed", "status": false })
 
+
+    if (req.headers.admin_token) {
+      updat_str += "  where id = '" + req_obj.id + "'"
+      console.log("_________________________updat_str_________________________")
+      console.log(updat_str)
+      connection.query(updat_str,
+        (err, result) => {
+          if (err) {
+            res.status(500).send({ "response": "error - opration failed", "status": false });
+            console.log(err)
+          } else {
+            result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull", "status": true })
+              : res.status(500).send({ "response": "error - opration failed", "status": false })
+
+          }
         }
-      }
-    );
+      );
+
+    } else if (req.headers.vendor_token) {
+      updat_str += "  where id = '" + req_obj.id + "' AND vendor_id = '" + req.vendor_id + "'"
+      console.log("_________________________updat_str_________________________")
+      console.log(updat_str)
+      connection.query(updat_str,
+        (err, result) => {
+          if (err) {
+            res.status(500).send({ "response": "error - opration failed", "status": false });
+            console.log(err)
+          } else {
+            result.affectedRows == "1" ? res.status(200).json({ "response": result, "message": "update successfull", "status": true })
+              : res.status(500).send({ "response": "error - opration failed", "status": false })
+
+          }
+        }
+      );
+    } else {
+      console.log("_____________________check_token----- send token admin_token or vendor_token ")
+      res.send({ "response": "please send admin_token or vendor_token", "status": false })
+
+    }
+
+
+
   } else {
-    res.send({ response: "please send product identity" })
+    res.send({ "response": "please send product identity", "status": false })
   }
 }
 
 
 
+
+
+
 export async function delete_product(req, res) {
-
-  connection.query(
-    "delete  from product where id ='" + req.body.id + "'",
-    (err, result) => {
-      if (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-      } else {
-        result.affectedRows == "1" ? res.status(StatusCodes.OK).json({ message: "delete successfully", "status": false }) : res.status(StatusCodes.OK).json({ message: "not delete ", "status": false });
-
-      }
+  let dlt_query = ""
+  if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
+    dlt_query += "delete  from product where id ='" + req.body.id + "' AND vendor_id = '" + req.vendor_id + "'"
+  } else {
+    dlt_query += "delete  from product where id ='" + req.body.id + "'"
+  }
+  connection.query(dlt_query, (err, result) => {
+    if (err) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ "response": "not delete ", "status": false });
+    } else {
+      result.affectedRows == "1" ? res.status(StatusCodes.OK).json({ "response": "delete successfully", "status": false }) : res.status(StatusCodes.OK).json({ "response": "not delete ", "status": false });
     }
+  }
   );
 }
 
@@ -138,10 +176,17 @@ export async function search_product(req, res) {
   // var query_string = "select * from product  where ";
   let search_obj = Object.keys(req.body)
   console.log(req.user_id)
+
   if (req.user_id != "" && req.user_id != undefined) {
     var search_string = 'SELECT *, (SELECT cart_product_quantity FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user_id + '") AS cart_count,   (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
   } else {
-    var search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
+
+
+    if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
+      var search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where vendor_id = "' + req.vendor_id + '" AND  ';
+    } else {
+      var search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM product where ';
+    }
   }
 
 

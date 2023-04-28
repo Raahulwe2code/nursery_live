@@ -133,7 +133,6 @@ export async function cart_delete(req, res) {
 
   connection.query("delete from cart where product_id ='" + product_id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
     if (err) {
-      console.log("err---------------------125-----")
       console.log(err)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "delete opration failed", "success": false });
     } else {

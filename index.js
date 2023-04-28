@@ -11,6 +11,7 @@ import orderRouter from "./src/routers/orderRouter.js";
 import notificationRouter from "./src/routers/notificationRouter.js";
 import product_images_router from "./src/routers/product_images_router.js";
 import filter_list_router from "./src/routers/filter_list_router.js";
+import vendor_router from "./src/routers/vendorRouter.js";
 import mongoose from 'mongoose';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport from 'passport'
@@ -36,7 +37,7 @@ app.use(bodyParser.urlencoded({ limit: "90mb", extended: true, parameterLimit: 5
 
 app.use(express.static("public"));
 
-app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router);
+app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router, vendor_router);
 
 
 
