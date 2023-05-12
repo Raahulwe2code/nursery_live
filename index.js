@@ -11,6 +11,7 @@ import orderRouter from "./src/routers/orderRouter.js";
 import notificationRouter from "./src/routers/notificationRouter.js";
 import product_images_router from "./src/routers/product_images_router.js";
 import filter_list_router from "./src/routers/filter_list_router.js";
+import delivery_router from "./src/routers/delivery_router.js";
 import vendor_router from "./src/routers/vendorRouter.js";
 import mongoose from 'mongoose';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
@@ -24,7 +25,7 @@ const app = express();
 connection;
 app.use(cors());
 
-app.use(express.json({ limit: '90mb' }));
+// app.use(express.json({ limit: '90mb' }));
 app.use(bodyParser.json());
 // to support JSON-encoded bodies
 // app.use(
@@ -37,8 +38,18 @@ app.use(bodyParser.urlencoded({ limit: "90mb", extended: true, parameterLimit: 5
 
 app.use(express.static("public"));
 
-app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router, vendor_router);
 
+connection.query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))", (err, rows) => {
+  if (err) {
+    console.log("error-------------------SET GLOBAL sql_mode===========" + err)
+  } else {
+    console.log("--ok-----------------SET GLOBAL sql_mode======ok=====")
+    console.log(rows)
+  }
+});
+
+app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router, vendor_router, delivery_router);
+// 
 
 
 mongoose.connect("mongodb+srv://Raahul_verma:vw48MlF9mMcMJL7y@cluster0.hxtq31y.mongodb.net/CrudNew?retryWrites=true&w=majority", {
@@ -131,10 +142,7 @@ app.get("/log", ensureAuth, async (req, res) => {
 
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
 
-
-app.get(
-  '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     res.redirect('/log')
   }
@@ -157,3 +165,6 @@ app.get('/auth/logout', (req, res) => {
 app.listen(8888, () => {
   console.log(`server is running at ${process.env.SERVERPORT}`);
 });
+
+
+

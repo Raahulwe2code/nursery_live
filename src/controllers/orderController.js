@@ -2,26 +2,27 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 import nodemailer from "nodemailer"
 
-
+import fetch from 'node-fetch';
 export async function add_order(req, res) {
-  let vendore_id_array = []
-  let order_no_obj = {}
-  let product_array = req.body
-
-  console.log("user_id=============================================11")
-  console.log(req.user_id)
-  console.log(product_array)
+  let vendore_id_array = [];
+  let order_no_obj = {};
+  let product_array = req.body;
+  var fcm_tokens = [];
+  console.log("user_id=============================================11");
+  console.log(req.user_id);
+  console.log(product_array);
 
   connection.query("SELECT * FROM user WHERE id='" + req.user_id + "'",
     (err, result) => {
       if (err) {
         console.log(err)
       } else {
-        // console.log(result)
-        var { first_name, last_name, email, phone_no, pincode, city, address, alternate_address } = result[0]
-        if (first_name != '' && last_name != '' && email != '' && phone_no != '' && pincode != '' && city != '' && address != '' && alternate_address != '') {
+        // console.log(result)first_name  email phone_no pincode city address
+        var { first_name, last_name, email, phone_no, pincode, city, address, alternate_address, user_log, user_lat, image } = result[0]
+        if (first_name != '' && last_name != '' && email != '' && phone_no != '' && pincode != '' && city != '' && address != '' && alternate_address != '' && user_log != '' && user_lat != '') {
           console.log("true_______line___23")
           console.log("user_id=============================================24")
+          if (result[0].token_for_notification != "" && result[0].token_for_notification != undefined && result[0].token_for_notification != null) { fcm_tokens.push(result[0].token_for_notification) }
 
           console.log(product_array)
 
@@ -35,6 +36,12 @@ export async function add_order(req, res) {
             if (vendore_id_array.includes(item["vendor_id"])) {
 
               let order_no_old = order_no_obj[item["vendor_id"]]
+
+              let verify_code = JSON.stringify(order_no_old * 13)
+              if (verify_code.length > 7) {
+                verify_code = verify_code.substring(0, verify_code.length - 1)
+              }
+
               console.log("++++++++++++++++++++++++++line---36___" + item["product_id"])
               connection.query("SELECT product_stock_quantity FROM product WHERE id='" + item["product_id"] + "'",
                 (err, result) => {
@@ -51,7 +58,7 @@ export async function add_order(req, res) {
                     if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
                       console.log("_____________update_stock_qty >= 0 && item[total_order_product_quantity] > 0________________line chek 52")
                       connection.query(
-                        "insert into `order` ( `order_id`, `product_id`,`user_id`, `vendor_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + order_no_old + "','" + item["product_id"] + "', '" + req.user_id + "','" + item["vendor_id"] + "','" + item["total_order_product_quantity"] +
+                        "insert into `order` ( `order_id`, `product_id`,`user_id`, `vendor_id`, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`,`delivery_lat`,`delivery_log`, `user_name`, `address`, `email`, `pin_code`, `city`, `user_image`, `phone_no`,`delivery_verify_code`) VALUES ('" + order_no_old + "','" + item["product_id"] + "', '" + req.user_id + "','" + item["vendor_id"] + "','" + item["total_order_product_quantity"] +
                         "','" +
                         item["total_amount"] +
                         "','" +
@@ -74,7 +81,7 @@ export async function add_order(req, res) {
                         item["discount_coupon"] +
                         "','" +
                         item["discount_coupon_value"] +
-                        "' )",
+                        "'," + user_lat + "," + user_log + ", '" + first_name + "', '" + address + "', '" + email + "', " + pincode + ", '" + city + "', '" + image + "','" + phone_no + "','" + verify_code + "')",
                         (err, rows) => {
                           if (err) {
                             console.log(err)
@@ -94,6 +101,20 @@ export async function add_order(req, res) {
                                 }
                               }
                             );
+
+                            connection.query("delete from cart where product_id ='" + item["product_id"] + "' AND user_id='" + req.user_id + "'", (err, rows) => {
+                              if (err) {
+                                console.log("rows----------------err-------delete---")
+                                console.log(err)
+                                console.log({ "response": "delete opration failed", "success": false });
+                              } else {
+                                // console.log("rows-----------------------delete---row")
+                                // console.log(rows)
+                                // rows.affectedRows == "1" ? console.log({ "response": "delete successfull", "success": true }) : res.console.log({ "response": "delete opration failed", "success": false })
+                              }
+                            });
+
+
                             // send_emal-----------------etc.
                             //resend--------------------
 
@@ -123,7 +144,10 @@ export async function add_order(req, res) {
               let orderno = Math.floor(100000 + Math.random() * 900000);
               vendore_id_array.push(item["vendor_id"])
               order_no_obj[item["vendor_id"]] = orderno
-
+              let verify_code = JSON.stringify(orderno * 13)
+              if (verify_code.length > 7) {
+                verify_code = verify_code.substring(0, verify_code.length - 1)
+              }
               connection.query("SELECT product_stock_quantity FROM product WHERE id='" + item["product_id"] + "'",
                 (err, result) => {
                   if (err) {
@@ -138,7 +162,7 @@ export async function add_order(req, res) {
                     console.log("update_stock_qty >= 0 && item[total_order_product_quantity] > 0--------------line---138")
                     if (update_stock_qty >= 0 && item["total_order_product_quantity"] > 0) {
                       connection.query(
-                        "insert into `order` ( `order_id`, `product_id`,`user_id`, vendor_id, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`) VALUES ('" + orderno + "','" + item["product_id"] + "', '" + req.user_id + "', '" + item["vendor_id"] + "', '" + item["total_order_product_quantity"] +
+                        "insert into `order` ( `order_id`, `product_id`,`user_id`, vendor_id, `total_order_product_quantity`,`total_amount`,`total_gst`,`total_cgst`, `total_sgst`,`total_discount`, `shipping_charges`,`invoice_id`, `payment_mode`,`payment_ref_id`, `discount_coupon`,`discount_coupon_value`,`delivery_lat`,`delivery_log`, `user_name`, `address`, `email`, `pin_code`, `city`, `user_image`, `phone_no`,`delivery_verify_code`) VALUES ('" + orderno + "','" + item["product_id"] + "', '" + req.user_id + "', '" + item["vendor_id"] + "', '" + item["total_order_product_quantity"] +
                         "','" +
                         item["total_amount"] +
                         "','" +
@@ -161,7 +185,7 @@ export async function add_order(req, res) {
                         item["discount_coupon"] +
                         "','" +
                         item["discount_coupon_value"] +
-                        "' )",
+                        "'," + user_lat + "," + user_log + ", '" + first_name + "', '" + address + "', '" + email + "', " + pincode + ", '" + city + "', '" + image + "','" + phone_no + "' ,'" + verify_code + "')",
                         (err, rows) => {
                           if (err) {
                             console.log(err)
@@ -182,7 +206,17 @@ export async function add_order(req, res) {
                               }
                             );
 
-
+                            connection.query("delete from cart where product_id ='" + item["product_id"] + "' AND user_id='" + req.user_id + "'", (err, rows) => {
+                              if (err) {
+                                console.log("rows------201----------err-------delete---")
+                                console.log(err)
+                                console.log({ "response": "delete opration failed", "success": false });
+                              } else {
+                                // console.log("rows---------205--------------delete---row")
+                                // console.log(rows)
+                                // rows.affectedRows == "1" ? console.log({ "response": "delete successfull", "success": true }) : res.console.log({ "response": "delete opration failed", "success": false })
+                              }
+                            });
                             connection.query('INSERT INTO order_detaile (`product_id`,`order_id`,`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on`) SELECT "' + item["product_id"] + '","' + orderno + '",`vendor_id`, `name`, `seo_tag`, `brand`, `quantity`, `unit`, `product_stock_quantity`, `price`, `mrp`, `gst`, `sgst`, `cgst`, `category`, `is_deleted`, `status`, `review`, `discount`, `rating`, `description`, `is_active`, `created_on`, `updated_on` FROM product WHERE id = ' + item["product_id"] + '', (err, result) => {
                               if (err) {
                                 console.log(err)
@@ -243,6 +277,24 @@ export async function add_order(req, res) {
               for (var k in order_no_obj) {
                 order_ar.push(order_no_obj[k])
               }
+
+              if (fcm_tokens != "") {
+                var notification = {
+                  "title": "nurser_live order notification",
+                  "text": "order placed successfull"
+                }
+
+                // var fcm_tokens = ["e42h1iTmRwGlyuwn9nGqu4:APA91bH6_qHLmPMYCjrkI1-l2eswwsWMxZJeMz9WRozFYA-DzNOCS58L9HPGaRWTaxKj7Zg4pJx2TRgZPU4O8IY7UgqJ5S6A8DY4BODWfQDdlFNZLaZmz5heuAlJdxI2Y-XVFcjNimDh"]
+
+                var notification_body = {
+                  "notification": notification,
+                  "registrations_ids": fcm_tokens
+                }
+                fetch("https://fcm.googleapis.com/fcm/send", { "method": "POST", "headers": { "authorization": "keys=" + "AAAABsq8jZc:APA91bG99gTYMmsMI_vlIJhjAxU6ta8j24v4dg-tInV4dKDUXqBzx3ORj_n0aI5k7opUvuyKI0nGhulfolpJgSFf2d5rnMfrN5CGA2fkpbCqTIlaidCChdDa5Gs7ymScojbL5pC93B54", "Content-Type": "application/json" }, "body": notification_body }).then(() => {
+                  console.log("notification send successfully")
+                }).catch((err) => { console.log(err) })
+              }
+
               res.status(StatusCodes.OK).json({ "status": "ok", "response": "order successfully added", "order_id": order_ar, "success": true });
 
             }
@@ -285,9 +337,11 @@ export async function order_list(req, res) {
 export async function order_details(req, res) {
   const id = req.query.id;
   let resp_obj = {}
-  connection.query('select * from `order` where order_id ="' + id + '" AND user_id ="' + req.user_id + '"',
+  // select order_id,user_id,vendor_id,total_order_product_quantity,total_amount  ,total_gst,total_cgst,total_sgst,total_discount,shipping_charges,payment_mode,payment_ref_id,order_date,delivery_date,discount_coupon ,discount_coupon_value from `order` where order_id ="398080" AND user_id ="35" GROUP BY order_id
+  connection.query('select order_id,user_id,vendor_id,total_order_product_quantity,total_amount  ,total_gst,total_cgst,total_sgst,total_discount,shipping_charges,payment_mode,payment_ref_id,order_date,delivery_date,discount_coupon ,discount_coupon_value from `order`  where order_id ="' + id + '" AND user_id ="' + req.user_id + '" GROUP BY order_id',
     (err, rows) => {
       if (err) {
+        console.log(err)
         res.status(StatusCodes.INSUFFICIENT_STORAGE).json(err);
       } else {
         if (rows != "") {
@@ -405,14 +459,13 @@ export async function order_search(req, res) {
   console.log(req.user_id)
   if (req.for_ == 'admin') {
     if (req.body.user_id != '' && req.body.user_id != undefined) {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view_3 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image  FROM order_view where'
     } else {
-      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view_3 where'
+      search_string += 'SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image FROM order_view where'
     }
   } else {
     if (req.for_ == 'user') {
-
-      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view_3.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view_3 where user_id="' + req.user_id + '" AND '
+      search_string = 'SELECT *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = order_view.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image   FROM order_view where user_id="' + req.user_id + '" AND '
     }
   }
 

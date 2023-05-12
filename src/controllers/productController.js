@@ -13,7 +13,7 @@ export async function addproduct(req, res) {
   if (n_mrp > n_price) {
     if (req.vendor_id != "" && req.vendor_id != undefined) {
       connection.query(
-        ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`mrp`,`gst`,`sgst`,`cgst`,`category`,`review`,`discount`,`rating`,`description`) values ("' +
+        ' INSERT INTO `product` (`vendor_id`,`name`,`seo_tag`,`brand`,`quantity`,`unit`,`product_stock_quantity`,`price`,`mrp`,`gst`,`sgst`,`cgst`,`category`,`review`,`discount`,`rating`,`description`, `created_by`, `created_by_id`) values ("' +
         req.vendor_id +
         '","' +
         name +
@@ -35,7 +35,7 @@ export async function addproduct(req, res) {
         rating +
         '","' +
         description +
-        '") ',
+        '","' + req.created_by + '","' + req.created_by_id + '") ',
         (err, result) => {
           if (err) {
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ "response": "find error", "status": false });

@@ -379,6 +379,8 @@ export function user_login(req, res) {
         } else {
           console.log(rows)
           if (rows != "") {
+
+
             console.log("rows[0].user_id_______________324___")
             console.log(rows[0].id)
             console.log(process.env.USER_JWT_SECRET_KEY)
@@ -388,7 +390,14 @@ export function user_login(req, res) {
               if (err) {
                 //console.log(err)
               }
-              res.send({ "status": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/" })
+              let { id, first_name, last_name, email, phone_no, pincode, status, city, address, alternate_address, user_type } = rows[0]
+              if (rows[0].first_name != "" && rows[0].last_name != "" && rows[0].email != "" && rows[0].password != "" && rows[0].phone_no != "" && rows[0].pincode != "" && rows[0].city != "" && rows[0].address != "" && rows[0].alternate_address != "") {
+                res.send({ "status": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/", "complete_profile": true, "user_detaile": { id, first_name, last_name, email, phone_no, pincode, city, address, alternate_address, status, user_type } })
+              } else {
+                res.send({ "status": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/", "complete_profile": false, "user_detaile": { id, first_name, last_name, email, phone_no, pincode, city, address, alternate_address, status, user_type } })
+              }
+
+
             })
           } else {
             res.status(200).send({ "status": false, "res_code": "003", "response": "creadintial not match" })
@@ -436,57 +445,80 @@ export function change_user_password(req, res) {
 
 export function user_forgate_password(req, res) {
   let regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z]{2,4})+$/;
+
+
   if (regex.test(req.body.email.trim()) && req.body.email != "") {
     const OTP = Math.floor(100000 + Math.random() * 900000);
-    connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`) VALUES ("' + req.body.email + '","' + OTP + '")', (err, rows, fields) => {
+
+    connection.query("select * from user where email = '" + req.body.email.trim() + "'", (err, rows) => {
       if (err) {
-        if (err.code == "ER_DUP_ENTRY") {
-          res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime", "status": false })
-        } else {
-          res.status(200).send({ "error": "find error ", "status": false })
-        }
+        console.log(err)
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ "response": "something went wrong", "status": false });
       } else {
-        if (rows != '') {
-          const mail_configs = {
-            from: 'ashish.we2code@gmail.com',
-            to: req.body.email,
-            subject: 'Nursery_live one time password',
-            text: "use otp within 60 sec.",
-            html: "<h1>your one time password " + OTP + " <h1/>"
-          }
-          nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: 'ashish.we2code@gmail.com',
-              pass: 'nczaguozpagczmjv'
+        if (rows != "") {
+
+          connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`) VALUES ("' + req.body.email.trim() + '","' + OTP + '")', (err, rows, fields) => {
+            if (err) {
+              if (err.code == "ER_DUP_ENTRY") {
+                res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime", "status": false })
+              } else {
+                res.status(200).send({ "error": "find error ", "status": false })
+              }
+            } else {
+              if (rows != '') {
+                const mail_configs = {
+                  from: 'ashish.we2code@gmail.com',
+                  to: req.body.email,
+                  subject: 'Nursery_live one time password',
+                  text: "use otp within 60 sec.",
+                  html: "<h1>your one time password " + OTP + " <h1/>"
+                }
+                nodemailer.createTransport({
+                  service: 'gmail',
+                  auth: {
+                    user: 'ashish.we2code@gmail.com',
+                    pass: 'nczaguozpagczmjv'
+                  }
+                })
+                  .sendMail(mail_configs, (err) => {
+                    if (err) {
+                      res.status(200).send({ "response": "not send email service error", "status": false })
+                      return //console.log({ "email_error": err });
+                    } else {
+                      res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true })
+                      return { "send_mail_status": "send successfully" };
+                    }
+                  })
+                setTimeout(function () {
+                  connection.query('DELETE FROM `user_auth_by_otp` WHERE `id` = "' + rows.insertId + '"', (err, rows, fields) => {
+                    if (err) {
+                      console.log("err____________________232")
+                      console.log(err)
+                    } else {
+                      console.log("delete__________________234")
+                      console.log(rows)
+                    }
+                  })
+                }, 60000)
+              } else {
+                console.log("Not insert in otp in database")
+              }
+
             }
           })
-            .sendMail(mail_configs, (err) => {
-              if (err) {
-                res.status(200).send({ "response": "not send email service error", "status": false })
-                return //console.log({ "email_error": err });
-              } else {
-                res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true })
-                return { "send_mail_status": "send successfully" };
-              }
-            })
-          setTimeout(function () {
-            connection.query('DELETE FROM `user_auth_by_otp` WHERE `id` = "' + rows.insertId + '"', (err, rows, fields) => {
-              if (err) {
-                console.log("err____________________232")
-                console.log(err)
-              } else {
-                console.log("delete__________________234")
-                console.log(rows)
-              }
-            })
-          }, 60000)
-        } else {
-          console.log("Not insert in otp in database")
-        }
 
+
+        } else {
+          res
+            .status(200)
+            .json({ "response": " eamil not exist", "status": false });
+        }
       }
     })
+
+
   } else {
     res.status(200).send({ "response": "cheack eamil foramate", "status": false })
   }
@@ -500,7 +532,7 @@ export function admin_login(req, res) {
   let { email, password } = req.body
   if (email !== "" && password !== "") {
     if (admin_email_ar.includes(email) && password === admin_psw) {
-      res.status(200).send({ "response": "login successfull", "admin_token": "admin_master_token=we2code_123456", "status": true })
+      res.status(200).send({ "response": "login successfull", "admin_token": "admin_master_token=we2code_123456", "status": true, "user_type": "admin", "admin_id": "001" })
     } else {
       console.log("credintial invalid")
       res.status(200).send({ "response": "credentials invalid", "status": false })
@@ -512,6 +544,7 @@ export function admin_login(req, res) {
 
   }
 }
+
 export function user_forgate_password_update(req, res) {
   console.log("__________________user_forgate_password_update")
   let psw = req.body.password.trim()
@@ -525,6 +558,25 @@ export function user_forgate_password_update(req, res) {
       } else {
         console.log(rows.affectedRows)
         if (rows.affectedRows == '1') { res.status(StatusCodes.OK).json({ "response": "update your password successfully", "success": true, "user_detaile": rows }); } else { res.status(StatusCodes.OK).json({ "response": "update opration feild ", "success": false }); }
+
+      }
+    }
+  );
+}
+
+export function set_notification_token(req, res) {
+  console.log("__________________not_token__update")
+  let not_token = req.body.token.trim()
+  console.log(not_token)
+  connection.query(
+    "update user  set `token_for_notification`= '" + not_token + "' where id ='" + req.user_id + "'",
+    (err, rows) => {
+      if (err) {
+        console.log(err)
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "something went wrong", "success": false });
+      } else {
+        console.log(rows.affectedRows)
+        if (rows.affectedRows == '1') { res.status(StatusCodes.OK).json({ "response": "update your token successfully", "success": true }); } else { res.status(StatusCodes.OK).json({ "response": "update opration feild ", "success": false }); }
 
       }
     }

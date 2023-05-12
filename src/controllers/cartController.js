@@ -60,7 +60,7 @@ export async function add_to_cart(req, res) {
   }
 
 }
-
+// (select count(*) cart where  user_id="' + req.user_id + '") AS cart_count, 
 export function cart_list(req, res) {
   var str_cart = 'select *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image from cart_view_1 where user_id="' + req.user_id + '"'
 
@@ -140,3 +140,26 @@ export async function cart_delete(req, res) {
     }
   });
 }
+
+
+export async function cart_and_notification_count(req, res) {
+  let res_array = []
+  connection.query("select count(id) AS cart_count from cart where user_id='" + req.user_id + "'", (err, rows) => {
+    if (err) {
+      console.log(err)
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "success": false });
+    } else {
+      res_array.push(rows[0])
+      connection.query("select count(id) AS unread_notification_count from notification where actor_id='" + req.user_id + "' AND status ='unread'", (err, rows) => {
+        if (err) {
+          console.log(err)
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "find error", "success": false });
+        } else {
+          res_array.push(rows[0])
+          res.status(200).json({ "success": true, "response": res_array });
+        }
+      })
+    }
+  });
+}
+

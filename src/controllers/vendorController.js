@@ -117,7 +117,7 @@ export function vendor_otp_verify(req, res) {
                                                     if (rows != "") {
                                                         console.log("___________________________________________________284_chkkkkkkkkkkkkkkk=============")
                                                         console.log(rows)
-                                                        jwt.sign({ id: rows[0].id }, process.env.VENDOR_JWT_SECRET_KEY, function (err, token) {
+                                                        jwt.sign({ id: rows[0].vendor_id }, process.env.VENDOR_JWT_SECRET_KEY, function (err, token) {
                                                             res.status(200).json({ "success": true, "token": token, "user_details": rows });
                                                         })
                                                     } else {
@@ -188,6 +188,7 @@ export function vendor_login(req, res) {
                 } else {
                     console.log(rows)
                     if (rows != "") {
+                        let { vendor_id, owner_name, shop_name, email, password, mobile, shop_address, gstn, geolocation, shop_logo, availability, status, user_type } = rows[0]
                         console.log("rows[0].vendor_id_______________324___")
                         console.log(rows[0].vendor_id)
                         console.log(process.env.VENDOR_JWT_SECRET_KEY)
@@ -197,7 +198,13 @@ export function vendor_login(req, res) {
                             if (err) {
                                 //console.log(err)
                             }
-                            res.send({ "success": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/" })
+                            if (owner_name != "" && shop_name != "" && email != "" && password != "" && mobile != "" && shop_address != "" && gstn != "" && geolocation != "" && shop_logo != "" && availability) {
+                                res.send({ "success": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/", "complete_profile": true, "vendor_detaile": { vendor_id, owner_name, shop_name, email, password, mobile, shop_address, gstn, geolocation, shop_logo, availability, status, user_type } })
+                            } else {
+                                res.send({ "success": true, "res_code": "001", "response": "successfully login", "token": token, "redirect_url": "http://localhost:3000/", "complete_profile": false, "vendor_detaile": { vendor_id, owner_name, shop_name, email, password, mobile, shop_address, gstn, geolocation, shop_logo, availability, status, user_type } })
+                            }
+
+
                         })
                     } else {
                         res.status(200).send({ "success": false, "res_code": "003", "response": "creadintial not match" })
@@ -218,53 +225,70 @@ export function vendor_forgate_password(req, res) {
     let regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z]{2,4})+$/;
     if (regex.test(req.body.email.trim()) && req.body.email != "") {
         const OTP = Math.floor(100000 + Math.random() * 900000);
-        connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`) VALUES ("' + req.body.email + '","' + OTP + '")', (err, rows, fields) => {
+
+
+        connection.query("select * from vendor where email = '" + req.body.email.trim() + "'", (err, rows) => {
             if (err) {
-                if (err.code == "ER_DUP_ENTRY") {
-                    res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime", "success": false })
-                } else {
-                    res.status(200).send({ "error": "find error ", "success": false })
-                }
+                console.log(err)
+                res
+                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .json({ "response": "something went wrong", "status": false });
             } else {
-                if (rows != '') {
-                    const mail_configs = {
-                        from: 'ashish.we2code@gmail.com',
-                        to: req.body.email,
-                        subject: 'Nursery_live one time password',
-                        text: "use otp within 60 sec.",
-                        html: "<h1>your one time password " + OTP + " <h1/>"
-                    }
-                    nodemailer.createTransport({
-                        service: 'gmail',
-                        auth: {
-                            user: 'ashish.we2code@gmail.com',
-                            pass: 'nczaguozpagczmjv'
+                if (rows != "") {
+                    connection.query('INSERT INTO `user_auth_by_otp` (`email`, `otp`) VALUES ("' + req.body.email + '","' + OTP + '")', (err, rows, fields) => {
+                        if (err) {
+                            if (err.code == "ER_DUP_ENTRY") {
+                                res.status(200).send({ "status": "200", "response": "email already exist, check your mail or try after sometime", "success": false })
+                            } else {
+                                res.status(200).send({ "error": "find error ", "success": false })
+                            }
+                        } else {
+                            if (rows != '') {
+                                const mail_configs = {
+                                    from: 'ashish.we2code@gmail.com',
+                                    to: req.body.email,
+                                    subject: 'Nursery_live one time password',
+                                    text: "use otp within 60 sec.",
+                                    html: "<h1>your one time password " + OTP + " <h1/>"
+                                }
+                                nodemailer.createTransport({
+                                    service: 'gmail',
+                                    auth: {
+                                        user: 'ashish.we2code@gmail.com',
+                                        pass: 'nczaguozpagczmjv'
+                                    }
+                                })
+                                    .sendMail(mail_configs, (err) => {
+                                        if (err) {
+                                            res.status(200).send({ "response": "not send email service error", "success": false })
+                                            return //console.log({ "email_error": err });
+                                        } else {
+                                            res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "success": true })
+                                            return { "send_mail_status": "send successfully" };
+                                        }
+                                    })
+                                setTimeout(function () {
+                                    connection.query('DELETE FROM `user_auth_by_otp` WHERE `id` = "' + rows.insertId + '"', (err, rows, fields) => {
+                                        if (err) {
+                                            console.log("err____________________232")
+                                            console.log(err)
+                                        } else {
+                                            console.log("delete__________________234")
+                                            console.log(rows)
+                                        }
+                                    })
+                                }, 60000)
+                            } else {
+                                console.log("Not insert in otp in database")
+                            }
+
                         }
                     })
-                        .sendMail(mail_configs, (err) => {
-                            if (err) {
-                                res.status(200).send({ "response": "not send email service error", "success": false })
-                                return //console.log({ "email_error": err });
-                            } else {
-                                res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "success": true })
-                                return { "send_mail_status": "send successfully" };
-                            }
-                        })
-                    setTimeout(function () {
-                        connection.query('DELETE FROM `user_auth_by_otp` WHERE `id` = "' + rows.insertId + '"', (err, rows, fields) => {
-                            if (err) {
-                                console.log("err____________________232")
-                                console.log(err)
-                            } else {
-                                console.log("delete__________________234")
-                                console.log(rows)
-                            }
-                        })
-                    }, 60000)
                 } else {
-                    console.log("Not insert in otp in database")
+                    res
+                        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                        .json({ "response": "email not exist", "status": false });
                 }
-
             }
         })
     } else {
@@ -326,7 +350,15 @@ export async function update_vendor_profile(req, res) {
             console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "success": false });
         } else {
-            res.status(StatusCodes.OK).json({ message: "updated vendor successfully", "success": true });
+
+            connection.query("select * from vendor where vendor_id ='" + req.vendor_id + "' ", (err, rows) => {
+                if (err) {
+                    console.log(err)
+                } else {
+                    res.status(StatusCodes.OK).json({ message: "updated vendor successfully", "success": true, "vendor_detaile": rows });
+                }
+            }
+            );
         }
     }
     );
@@ -339,11 +371,11 @@ export async function admin_add_vendor(req, res) {
     // console.log(req.file.filename)
     if (req.file == undefined || req.file == '') {
         var image = "no image"
-        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`availability`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + availability + '")'
+        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`availability`, `created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + availability + ',"' + req.created_by + '","' + req.created_by_id + '"")'
     } else {
         var image = "http://192.168.29.109:8888/vendor_shop_img/" + req.file.filename;
         //console.log(image)
-        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`shop_logo`,`availability`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + image + '","' + availability + '")'
+        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`shop_logo`,`availability`,`created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + image + '","' + availability + ',"' + req.created_by + '","' + req.created_by_id + '"")'
     }
     console.log(req.vendor_id)
     connection.query(srt_user, (err, rows) => {
@@ -401,7 +433,12 @@ export function admin_change_vendor_status(req, res) {
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "something went wrong", "success": false });
         } else {
             if (rows.affectedRows == '1') {
-                res.status(StatusCodes.OK).json({ "response": "updated successfull", "success": true });
+                if (res_obj.status != "" && res_obj.status != undefined && res_obj.status != null) {
+                    res.status(StatusCodes.OK).json({ "response": "updated successfull", "success": true, status: res_obj.status });
+                } else {
+                    res.status(StatusCodes.OK).json({ "response": "updated successfull", "success": true });
+
+                }
             } else {
                 res.status(StatusCodes.OK).json({ "response": "something went wrong", "success": false });
             }
@@ -410,3 +447,18 @@ export function admin_change_vendor_status(req, res) {
     }
     );
 }
+
+// var notification = {
+//     "title": "tttt",
+//     "text": "tccttt"
+// }
+
+// var fcm_tokens = ["e42h1iTmRwGlyuwn9nGqu4:APA91bH6_qHLmPMYCjrkI1-l2eswwsWMxZJeMz9WRozFYA-DzNOCS58L9HPGaRWTaxKj7Zg4pJx2TRgZPU4O8IY7UgqJ5S6A8DY4BODWfQDdlFNZLaZmz5heuAlJdxI2Y-XVFcjNimDh"]
+
+// var notification_body = {
+//     "notification": notification,
+//     "registrations_ids": fcm_tokens
+// }
+// fetch("https://fcm.googleapis.com/fcm/send", { "method": POST, "headers": { "authorization": "keys=" + "AAAABsq8jZc:APA91bG99gTYMmsMI_vlIJhjAxU6ta8j24v4dg-tInV4dKDUXqBzx3ORj_n0aI5k7opUvuyKI0nGhulfolpJgSFf2d5rnMfrN5CGA2fkpbCqTIlaidCChdDa5Gs7ymScojbL5pC93B54", "Content-Type": "application/json" }, "body": JSON.stringify(notification_body) }).then(() => {
+//     console.log("notification send successfully")
+// }).catch((err) => { console.log(err) })

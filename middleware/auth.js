@@ -34,6 +34,9 @@ function admin_auth(req, res, next) {
       //       .json({ "response": "vendor id related problem,", "status": false });
       //   } else {
       //     if (rows != "") {
+      console.log("_________________________req.body.vendor_id_______" + req.body.vendor_id)
+
+      req.created_by_id = "001";
       req.vendor_id = req.body.vendor_id;
       next()
       //     } else {
@@ -45,7 +48,7 @@ function admin_auth(req, res, next) {
       // });
 
     } else {
-      res.send({ "error": "token not match" })
+      res.send({ "error": "token not match", "success": false })
     }
 
   } else if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
@@ -62,6 +65,7 @@ function admin_auth(req, res, next) {
             .json({ "response": "vendor id related problem,", "status": false });
         } else {
           if (rows != "") {
+            req.created_by_id = token.id
             req.vendor_id = token.id
             next()
           } else {
@@ -104,7 +108,26 @@ function auth_user(req, res, next) {
   }
 }
 
+function driver_auth(req, res, next) {
+  try {
+    console.log("chek__________________________DRIVER_JWT_SECRET_KEY_____________middleware___" + req.headers.driver_token)
+    let token = jwt.verify(req.headers.driver_token, process.env.DRIVER_JWT_SECRET_KEY);
+    console.log(token)
+    console.log(token.id)
 
+    if (req.headers.driver_token != "" && req.headers.driver_token != undefined) {
+      req.driver_id = token.id
+      console.log('req.driver_id')
+      console.log(req.driver_id)
+      next()
+    } else {
+      res.send({ "error": "token error" })
+    }
+
+  } catch (err) {
+    res.status(401).send(err)
+  }
+}
 
 
 function fetch_user(req, res, next) {
@@ -113,6 +136,7 @@ function fetch_user(req, res, next) {
     if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
       if (req.headers.admin_token == "admin_master_token=we2code_123456") {
         req.for_ = "admin"
+        req.admin_id = "001"
         next()
       } else {
         res.send({ "error": "admin token not match" })
@@ -147,6 +171,18 @@ function fetch_user(req, res, next) {
     console.log(token)
     req.vendor_id = token.id
     next()
+  } else if (req.headers.driver_token != "" && req.headers.driver_token != undefined) {
+    try {
+      console.log("chek__________________________DRIVER_JWT_SECRET_KEY_____________middleware___" + req.headers.driver_token)
+      let token = jwt.verify(req.headers.driver_token, process.env.DRIVER_JWT_SECRET_KEY);
+      console.log(token.id)
+      req.driver_id = token.id
+      console.log('req.driver_id')
+      console.log(req.driver_id)
+      next()
+    } catch (err) {
+      res.status(401).send(err)
+    }
   } else {
     res.send({ "error": "send only vendor, user, admin token" })
   }
@@ -176,4 +212,4 @@ function auth_vendor(req, res, next) {
 }
 
 
-export { ensureAuth, ensureGuest, admin_auth, auth_user, fetch_user, auth_vendor }
+export { ensureAuth, ensureGuest, admin_auth, auth_user, fetch_user, auth_vendor, driver_auth }
