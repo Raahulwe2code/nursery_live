@@ -53,8 +53,8 @@ export function sign_by_driver(req, res) {
                                                     res.status(200).send({ "response": "not send email service error", "status": false })
                                                     return //console.log({ "email_error": err });
                                                 } else {
-                                                    res.status(200).send({ "res_code": "001", "status": "ok", "response": "send otp on your mail", "otp": OTP })
-                                                    return { "send_mail_status": "send successfully", "status": true };
+                                                    res.status(200).send({ "res_code": "001", "status": "ok", "response": "send otp on your mail", "otp": OTP, "expire_time": 180 })
+                                                    return { "send_mail_status": "send successfully", "status": true, "expire_time": 180 };
                                                 }
                                             })
                                         setTimeout(function () {
@@ -67,7 +67,7 @@ export function sign_by_driver(req, res) {
                                                     console.log(rows)
                                                 }
                                             })
-                                        }, 60000)
+                                        }, 60000 * 3)
                                     } else {
                                         console.log("Not insert in otp in database")
                                     }
@@ -268,8 +268,8 @@ export function driver_forgate_password(req, res) {
                                             res.status(200).send({ "response": "not send email service error", "status": false })
                                             return //console.log({ "email_error": err });
                                         } else {
-                                            res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true })
-                                            return { "send_mail_status": "send successfully" };
+                                            res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true, "expire_time": 180 })
+                                            return { "send_mail_status": "send successfully", "expire_time": 180 };
                                         }
                                     })
                                 setTimeout(function () {
@@ -282,7 +282,7 @@ export function driver_forgate_password(req, res) {
                                             console.log(rows)
                                         }
                                     })
-                                }, 60000)
+                                }, 60000 * 3)
                             } else {
                                 console.log("Not insert in otp in database")
                             }
@@ -435,9 +435,16 @@ export async function update_driver(req, res) {
 }
 
 export function add_working_area(req, res) {
-    let { driver_id, city, area_name, pin_code, driver_log, driver_lat } = req.body
-
-    connection.query("INSERT INTO `driver_working_area`( `driver_id`,`city`, `area_name`, `pin_code`, `driver_log`, `driver_lat`) VALUES (" + driver_id + ",'" + city + "','" + area_name + "'," + pin_code + "," + driver_log + "," + driver_lat + ")", (err, rows) => {
+    let { city, area_name, pin_code, driver_log, driver_lat } = req.body
+    let query_ = ""
+    if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
+        query_ += "INSERT INTO `driver_working_area`(`city`, `area_name`, `pin_code`, `driver_log`, `driver_lat`) VALUES ('" + city + "','" + area_name + "'," + pin_code + "," + driver_log + "," + driver_lat + ")"
+    }
+    if (req.headers.driver_token != "" && req.headers.driver_token != undefined) {
+        query_ += "INSERT INTO `driver_working_area`( `city`, `area_name`, `pin_code`, `driver_log`, `driver_lat`) VALUES ('" + city + "','" + area_name + "'," + pin_code + "," + driver_log + "," + driver_lat + ")"
+    }
+    console.log(query_)
+    connection.query(query_, (err, rows) => {
         if (err) {
             console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
@@ -456,7 +463,7 @@ export function chouse_driver_for_delivery(req, res) {
     } else {
         query_ += "SELECT * FROM driver_working_area  LEFT JOIN delivery_man ON driver_working_area.driver_id = delivery_man.driver_id "
     }
-
+    console.log(query_)
     connection.query(query_, (err, rows) => {
         if (err) {
             console.log(err)
@@ -490,7 +497,8 @@ export function register_your_vehicle(req, res) {
     } else {
         srt_user = ""
     }
-
+    console.log("srt_user====================================================srt_user")
+    console.log(srt_user)
     connection.query(srt_user, (err, rows) => {
         if (err) {
             console.log(err)
@@ -508,16 +516,31 @@ export function register_your_vehicle(req, res) {
 
 
 export function order_asign(req, res) {
-    let { order_id, driver_id, payment, payment_method, order_delivery_confirm_code } = req.body
+    let { order_id, payment, payment_method, order_delivery_confirm_code } = req.body
+    console.log({ order_id, payment, payment_method, order_delivery_confirm_code })
 
+    connection.query("INSERT INTO `order_delivery_details`(`order_id`, `payment`,  `payment_method`, `order_delivery_confirm_code`,`order_ready_to_asign_for_delivery_by`) VALUES ('" + order_id + "','" + payment + "', '" + payment_method + "', '" + order_delivery_confirm_code + "' ,'" + req.created_by_id + "')", (err, rows) => {
+        if (err) {
+            console.log(err)
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
+        } else {
+            res.status(StatusCodes.OK).json(rows);
+        }
+    });
+}
+
+export function order_asign_by_delivery_admin(req, res) {
+    let { order_id, driver_id } = req.body
+    console.log({ order_id, driver_id })
     connection.query("SELECT * FROM `vehicle_detaile` WHERE driver_id = " + driver_id + " AND is_active='1'", (err, rows) => {
         if (err) {
             console.log("error vehicle_detaile=========" + err)
         } else {
-            console.log("--ok--------------vehicle_detaile====ok=====")
-            console.log(rows[0]["vehicle_id"])
+
             if (rows != "") {
-                connection.query("INSERT INTO `order_delivery_details`(`order_id`, `driver_id`, `vehicle_id`, `order_asign_by`, `payment`,  `payment_method`, `order_delivery_confirm_code`) VALUES ('" + order_id + "', '" + driver_id + "', '" + rows[0]["vehicle_id"] + "', '" + req.created_by_id + "', '" + payment + "', '" + payment_method + "', '" + order_delivery_confirm_code + "')", (err, rows) => {
+                console.log("--ok--------------vehicle_detaile====ok=====")
+                console.log(rows[0]["vehicle_id"])
+                connection.query("UPDATE `order_delivery_details` SET `driver_id`='" + driver_id + "', `vehicle_id`='" + rows[0]["vehicle_id"] + "',`order_asign_by`='" + req.created_by_id + "',`last_modification_by`='delivery_admin',`last_modification_by_id`='" + req.created_by_id + "' WHERE order_id = " + order_id + "", (err, rows) => {
                     if (err) {
                         console.log(err)
                         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
@@ -533,9 +556,8 @@ export function order_asign(req, res) {
     });
 }
 
-
 export function get_delivery_detaile_list(req, res) {
-    let filter = "SELECT orders_details_id,payment,order_status,payment_method,order_delivery_details.created_on AS order_asign_date, order_delivery_details.driver_id,driver_name,driver_last_name,date_of_birth,contect_no , order_delivery_details.order_id, order_date, product_id,shipping_charges, delivery_date,delivery_lat,delivery_log, user_name, address, `order`.email AS user_email, pin_code, city, user_image, phone_no, total_order_product_quantity, order_delivery_details.vehicle_id,registration_no_of_vehicle FROM `order_delivery_details` LEFT JOIN delivery_man ON order_delivery_details.driver_id = delivery_man.driver_id LEFT JOIN `order` ON order_delivery_details.order_id = `order`.order_id LEFT JOIN `vehicle_detaile` ON vehicle_detaile.vehicle_id = order_delivery_details.vehicle_id where"
+    let filter = "SELECT orders_details_id,payment,order_status,payment_method,order_delivery_details.created_on AS order_asign_date, order_delivery_details.driver_id,driver_name,driver_last_name,date_of_birth,contect_no , order_delivery_details.order_id, order_date, product_id,shipping_charges, delivery_date,delivery_lat,delivery_log, user_name, address, `order`.email AS user_email, pin_code, city, user_image, phone_no, total_order_product_quantity, order_delivery_details.vehicle_id,registration_no_of_vehicle,status_comment FROM `order_delivery_details` LEFT JOIN delivery_man ON order_delivery_details.driver_id = delivery_man.driver_id LEFT JOIN `order` ON order_delivery_details.order_id = `order`.order_id LEFT JOIN `vehicle_detaile` ON vehicle_detaile.vehicle_id = order_delivery_details.vehicle_id where"
     let req_obj = req.body
 
     if (req.body.date_from != "" && req.body.date_from != undefined && req.body.date_to != "" && req.body.date_to != undefined) {
@@ -595,9 +617,23 @@ export function delivery_area_list(req, res) {
 }
 
 export function active_deactive_area(req, res) {
-    let { id, user_active_this_area } = req.body
+    console.log(req.body)
+    let query_ = "UPDATE `driver_working_area` SET "
 
-    connection.query("UPDATE `driver_working_area` SET `user_active_this_area`=" + user_active_this_area + " WHERE id=" + id + " AND driver_id='" + req.driver_id + "'", (err, rows) => {
+    let { id, user_active_this_area, is_active, driver_id } = req.body
+    if (user_active_this_area != undefined) {
+        query_ += `user_active_this_area = '${user_active_this_area}'`
+    } else if (is_active != undefined) {
+        query_ += `is_active = '${is_active}'`
+    } else if (driver_id != undefined) {
+        query_ += `driver_id = '${driver_id}'`
+    } else {
+        query_ = ""
+    }
+
+    console.log("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    console.log(query_ + " WHERE id=" + id + "")
+    connection.query(query_ + " WHERE id=" + id + "", (err, rows) => {
         if (err) {
             console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });
@@ -627,7 +663,7 @@ export function change_order_detaile_status(req, res) {
     if (req.headers.driver_token != "" && req.headers.driver_token != undefined && req.headers.driver_token != null) {
         query_ = "UPDATE `order_delivery_details` SET `order_status`='" + req.body.order_status + "', `last_modification_by`='delivery_man', `last_modification_by_id`='" + req.driver_id + "',`status_comment`='" + req.body.status_comment + "'"
     }
-
+    console.log(query_ + " WHERE order_id='" + order_id + "'")
     connection.query(query_ + " WHERE order_id='" + order_id + "'", (err, rows) => {
         if (err) {
             console.log(err)
@@ -795,12 +831,16 @@ export function update_your_vehicle(req, res) {
 export function change_vehicle_feild(req, res) {
     let srt_user = "UPDATE `vehicle_detaile` SET"
     console.log("UPDATE `vehicle_detaile` SET")
+    console.log(req.body)
     for (let k in req.body) {
-        srt_user += `  ${k}="${req.files[k]}",`
+        console.log("__" + req.body[k] + "___")
+        srt_user += `  ${k}="${req.body[k]}",`
     }
+    console.log(srt_user)
+
     srt_user = srt_user.substring(0, srt_user.length - 1)
-    console.log(srt_user + ` where vehicle_id = ${req.body.vehicle_id} `)
-    connection.query(srt_user + ` where vehicle_id = ${req.body.vehicle_id} `, (err, rows) => {
+    console.log(srt_user + ` where vehicle_id = '${req.body.vehicle_id}' `)
+    connection.query(srt_user + ` where vehicle_id = '${req.body.vehicle_id}' `, (err, rows) => {
         if (err) {
             console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "status": false });

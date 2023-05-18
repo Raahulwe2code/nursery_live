@@ -26,30 +26,37 @@ function ensureGuest(req, res, next) {
 function admin_auth(req, res, next) {
   console.log("chek______________________________________________middleware___" + req.headers.admin_token)
   if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
-    if (req.headers.admin_token == "admin_master_token=we2code_123456") {
-      // connection.query("select * from vendor where vendor_id= '" + req.body.vendor_id + "'", (err, rows) => {
-      //   if (err) {
-      //     res
-      //       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      //       .json({ "response": "vendor id related problem,", "status": false });
-      //   } else {
-      //     if (rows != "") {
-      console.log("_________________________req.body.vendor_id_______" + req.body.vendor_id)
-
-      req.created_by_id = "001";
+    try {
+      console.log("chek______________________________________admin_token_token________middleware___" + req.headers.admin_token)
+      let token = jwt.verify(req.headers.admin_token, process.env.ADMIN_JWT_SECRET_KEY);
+      console.log(token)
+      console.log(token.id)
+      req.created_by_id = token.id;
       req.vendor_id = req.body.vendor_id;
+      req.admin_type = token.admin_type
       next()
-      //     } else {
-      //       res
-      //         .status(200)
-      //         .json({ "response": "vendor id related problem,", "status": false });
-      //     }
-      //   }
-      // });
-
-    } else {
-      res.send({ "error": "token not match", "success": false })
+    } catch (err) {
+      // console.log(err)
+      // res.status(401).send({ "response": err, "status": false, })
+      if (req.headers.admin_token == "admin_master_token=we2code_123456") {
+        console.log("_________________________req.body.vendor_id_______" + req.body.vendor_id)
+        req.created_by_id = "001";
+        req.admin_type = "super_admin";
+        req.vendor_id = req.body.vendor_id;
+        next()
+      } else {
+        res.send({ "error": "token not match", "success": false })
+      }
     }
+
+    // if (req.headers.admin_token == "admin_master_token=we2code_123456") {
+    //   console.log("_________________________req.body.vendor_id_______" + req.body.vendor_id)
+    //   req.created_by_id = "001";
+    //   req.vendor_id = req.body.vendor_id;
+    //   next()
+    // } else {
+    //   res.send({ "error": "token not match", "success": false })
+    // }
 
   } else if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
     try {
@@ -134,12 +141,29 @@ function fetch_user(req, res, next) {
   if ('admin_token' in req.headers) {
     console.log("chek______________________________________________middleware___" + req.headers.admin_token)
     if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
-      if (req.headers.admin_token == "admin_master_token=we2code_123456") {
+
+      try {
+        console.log("chek______________________________________admin_token_token________middleware___" + req.headers.admin_token)
+        let token = jwt.verify(req.headers.admin_token, process.env.ADMIN_JWT_SECRET_KEY);
+        console.log(token)
+        console.log(token.id)
+
         req.for_ = "admin"
-        req.admin_id = "001"
+        req.created_by_id = token.id;
+        req.admin_type = token.admin_type
+        req.admin_id = token.id;
+        req.vendor_id = req.body.vendor_id;
+
         next()
-      } else {
-        res.send({ "error": "admin token not match" })
+      } catch (err) {
+        if (req.headers.admin_token == "admin_master_token=we2code_123456") {
+          req.for_ = "admin"
+          req.admin_id = "001"
+          req.admin_type = "super_admin";
+          next()
+        } else {
+          res.send({ "error": "admin token not match" })
+        }
       }
     } else {
       res.send({ "error": "vendor token not match" })
@@ -191,6 +215,85 @@ function fetch_user(req, res, next) {
 }
 
 
+function fetch_admin_driver(req, res, next) {
+  if ('admin_token' in req.headers) {
+    console.log("chek______________________________________________middleware___" + req.headers.admin_token)
+    if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
+
+      try {
+        console.log("chek______________________________________admin_token_token________middleware___" + req.headers.admin_token)
+        let token = jwt.verify(req.headers.admin_token, process.env.DRIVER_ADMIN_JWT_SECRET_KEY);
+        console.log(token)
+        console.log(token.id)
+
+        req.for_ = "admin"
+        req.created_by_id = token.id;
+        req.admin_type = token.admin_type
+        req.admin_id = token.id;
+        req.vendor_id = req.body.vendor_id;
+
+        next()
+      } catch (err) {
+        if (req.headers.admin_token == "admin_master_token=we2code_123456") {
+          req.for_ = "admin"
+          req.admin_id = "001"
+          req.admin_type = "super_admin";
+          next()
+        } else {
+          res.send({ "error": "admin token not match" })
+        }
+      }
+    } else {
+      res.send({ "error": "vendor token not match" })
+    }
+
+
+  } else if ('user_token' in req.headers) {
+    try {
+      console.log("chek______________________________________________middleware___" + req.headers.user_token)
+      let token = jwt.verify(req.headers.user_token, process.env.USER_JWT_SECRET_KEY);
+      console.log(token)
+
+      if (req.headers.user_token != "" && req.headers.user_token != undefined) {
+        req.user_id = token.id
+        req.for_ = "user"
+        next()
+      } else {
+        res.send({ "error": "user token error" })
+      }
+
+    } catch (err) {
+      res.send({ "error": "user token error" })
+    }
+  } else if (req.headers.user_blank == "true") {
+    search_product(req, res)
+  } else if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
+    let token = jwt.verify(req.headers.vendor_token, process.env.VENDOR_JWT_SECRET_KEY);
+    console.log("token+++++++++-----------------------" + token.id)
+    console.log(token)
+    req.vendor_id = token.id
+    next()
+  } else if (req.headers.driver_token != "" && req.headers.driver_token != undefined) {
+    try {
+      console.log("chek__________________________DRIVER_JWT_SECRET_KEY_____________middleware___" + req.headers.driver_token)
+      let token = jwt.verify(req.headers.driver_token, process.env.DRIVER_JWT_SECRET_KEY);
+      console.log(token.id)
+      req.driver_id = token.id
+      console.log('req.driver_id')
+      console.log(req.driver_id)
+      next()
+    } catch (err) {
+      res.status(401).send(err)
+    }
+  } else {
+    res.send({ "error": "send only vendor, user, admin token" })
+  }
+
+
+}
+
+
+
 function auth_vendor(req, res, next) {
   try {
     console.log("chek_______________" + process.env.VENDOR_JWT_SECRET_KEY + "_____________vendor_token__________________middleware___" + req.headers.vendor_token)
@@ -212,4 +315,4 @@ function auth_vendor(req, res, next) {
 }
 
 
-export { ensureAuth, ensureGuest, admin_auth, auth_user, fetch_user, auth_vendor, driver_auth }
+export { ensureAuth, ensureGuest, admin_auth, auth_user, fetch_user, auth_vendor, driver_auth, fetch_admin_driver }

@@ -13,6 +13,7 @@ import product_images_router from "./src/routers/product_images_router.js";
 import filter_list_router from "./src/routers/filter_list_router.js";
 import delivery_router from "./src/routers/delivery_router.js";
 import vendor_router from "./src/routers/vendorRouter.js";
+import adminRouter from "./src/routers/admin_router.js";
 import mongoose from 'mongoose';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import passport from 'passport'
@@ -26,7 +27,7 @@ connection;
 app.use(cors());
 
 // app.use(express.json({ limit: '90mb' }));
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 // to support JSON-encoded bodies
 // app.use(
 //   bodyParser.urlencoded({
@@ -34,7 +35,10 @@ app.use(bodyParser.json());
 //     extended: true,
 //   })
 // );
-app.use(bodyParser.urlencoded({ limit: "90mb", extended: true, parameterLimit: 50000 }));
+app.use(bodyParser.json({ limit: '500mb' }));
+app.use(bodyParser.urlencoded({ limit: '500mb', extended: true, parameterLimit: 70000 }));
+
+// app.use(bodyParser.urlencoded({ limit: "90mb", extended: true, parameterLimit: 50000 }));
 
 app.use(express.static("public"));
 
@@ -48,7 +52,7 @@ connection.query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROU
   }
 });
 
-app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router, vendor_router, delivery_router);
+app.use(productRouter, cartRouter, userRouter, orderRouter, notificationRouter, product_images_router, filter_list_router, vendor_router, delivery_router, adminRouter);
 // 
 
 

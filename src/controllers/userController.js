@@ -240,8 +240,8 @@ export function user_signup(req, res) {
                           res.status(200).send({ "response": "not send email service error", "status": false })
                           return //console.log({ "email_error": err });
                         } else {
-                          res.status(200).send({ "res_code": "001", "status": "ok", "response": "send otp on your mail", "otp": OTP })
-                          return { "send_mail_status": "send successfully", "status": true };
+                          res.status(200).send({ "res_code": "001", "status": "ok", "response": "send otp on your mail", "otp": OTP, "expire_time": 180 })
+                          return { "send_mail_status": "send successfully", "status": true, "expire_time": 180 };
                         }
                       })
                     setTimeout(function () {
@@ -254,7 +254,7 @@ export function user_signup(req, res) {
                           console.log(rows)
                         }
                       })
-                    }, 60000)
+                    }, 60000 * 3)
                   } else {
                     console.log("Not insert in otp in database")
                   }
@@ -487,8 +487,8 @@ export function user_forgate_password(req, res) {
                       res.status(200).send({ "response": "not send email service error", "status": false })
                       return //console.log({ "email_error": err });
                     } else {
-                      res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true })
-                      return { "send_mail_status": "send successfully" };
+                      res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "status": true, "expire_time": 180 })
+                      return { "send_mail_status": "send successfully", "expire_time": 180 };
                     }
                   })
                 setTimeout(function () {
@@ -501,7 +501,7 @@ export function user_forgate_password(req, res) {
                       console.log(rows)
                     }
                   })
-                }, 60000)
+                }, 60000 * 3)
               } else {
                 console.log("Not insert in otp in database")
               }
@@ -526,24 +526,24 @@ export function user_forgate_password(req, res) {
 }
 
 
-export function admin_login(req, res) {
-  let admin_email_ar = ["mayur.we2code@gmail.com", "ashish.we2code@gmail.com", "chetan.barod.we2code@gmail.com", "raj.we2code@gmail.com", "rahul.verma.we2code@gmail.com"]
-  let admin_psw = "we2code1234"
-  let { email, password } = req.body
-  if (email !== "" && password !== "") {
-    if (admin_email_ar.includes(email) && password === admin_psw) {
-      res.status(200).send({ "response": "login successfull", "admin_token": "admin_master_token=we2code_123456", "status": true, "user_type": "admin", "admin_id": "001" })
-    } else {
-      console.log("credintial invalid")
-      res.status(200).send({ "response": "credentials invalid", "status": false })
+// export function admin_login(req, res) {
+//   let admin_email_ar = ["mayur.we2code@gmail.com", "ashish.we2code@gmail.com", "chetan.barod.we2code@gmail.com", "raj.we2code@gmail.com", "rahul.verma.we2code@gmail.com"]
+//   let admin_psw = "we2code1234"
+//   let { email, password } = req.body
+//   if (email !== "" && password !== "") {
+//     if (admin_email_ar.includes(email) && password === admin_psw) {
+//       res.status(200).send({ "response": "login successfull", "admin_token": "admin_master_token=we2code_123456", "status": true, "user_type": "admin", "admin_id": "001" })
+//     } else {
+//       console.log("credintial invalid")
+//       res.status(200).send({ "response": "credentials invalid", "status": false })
 
-    }
-  } else {
-    console.log("fill email and password")
-    res.status(200).send({ "response": "fill email and password", "status": false })
+//     }
+//   } else {
+//     console.log("fill email and password")
+//     res.status(200).send({ "response": "fill email and password", "status": false })
 
-  }
-}
+//   }
+// }
 
 export function user_forgate_password_update(req, res) {
   console.log("__________________user_forgate_password_update")

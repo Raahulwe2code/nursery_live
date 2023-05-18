@@ -195,8 +195,9 @@ export async function search_product(req, res) {
     search_string += '(`price` BETWEEN "' + price_from + '" AND "' + price_to + '") AND   '
   }
 
-  for (var i = 2; i <= search_obj.length - 1; i++) {
-    if (i == 2) {
+  for (var i = 3; i <= search_obj.length - 1; i++) {
+
+    if (i == 3) {
       if (req.body[search_obj[i]] != "") {
         search_string += `name LIKE "%${req.body[search_obj[i]]}%" AND   `
       }
@@ -212,6 +213,10 @@ export async function search_product(req, res) {
     }
     if (i === search_obj.length - 1) {
       search_string = search_string.substring(0, search_string.length - 6);
+      if (search_obj[2] != undefined && req.body[search_obj[2]] != "") {
+        search_string += ` ORDER BY ${search_obj[2]} ${req.body[search_obj[2]]} `
+      }
+
     }
   }
   console.log(search_string)

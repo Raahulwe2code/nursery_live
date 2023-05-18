@@ -51,8 +51,8 @@ export function vendor_signup(req, res) {
                                                     res.status(200).send({ "response": "not send email service error", "status": false })
                                                     return //console.log({ "email_error": err });
                                                 } else {
-                                                    res.status(200).send({ "res_code": "001", "success": true, "response": "send otp on your mail", "otp": OTP })
-                                                    return { "send_mail_status": "send successfully", "success": true };
+                                                    res.status(200).send({ "res_code": "001", "success": true, "response": "send otp on your mail", "otp": OTP, "expire_time": 180 })
+                                                    return { "send_mail_status": "send successfully", "success": true, "expire_time": 180 };
                                                 }
                                             })
                                         setTimeout(function () {
@@ -65,7 +65,7 @@ export function vendor_signup(req, res) {
                                                     console.log(rows)
                                                 }
                                             })
-                                        }, 60000)
+                                        }, 60000 * 3)
                                     } else {
                                         console.log("Not insert in otp in database")
                                     }
@@ -263,8 +263,8 @@ export function vendor_forgate_password(req, res) {
                                             res.status(200).send({ "response": "not send email service error", "success": false })
                                             return //console.log({ "email_error": err });
                                         } else {
-                                            res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "success": true })
-                                            return { "send_mail_status": "send successfully" };
+                                            res.status(200).send({ "response": "send otp on your mail", "otp": OTP, "success": true, "expire_time": 180 })
+                                            return { "send_mail_status": "send successfully", "expire_time": 180 };
                                         }
                                     })
                                 setTimeout(function () {
@@ -277,7 +277,7 @@ export function vendor_forgate_password(req, res) {
                                             console.log(rows)
                                         }
                                     })
-                                }, 60000)
+                                }, 60000 * 3)
                             } else {
                                 console.log("Not insert in otp in database")
                             }
@@ -330,28 +330,39 @@ export async function vendor_details(req, res) {
 }
 
 export async function update_vendor_profile(req, res) {
-    var { owner_name, shop_name, email, mobile, shop_address, gstn, geolocation, availability } = req.body;
+    var { owner_name, shop_name, mobile, shop_address, gstn, geolocation, availability } = req.body;
     let srt_user = ""
+    let srt_user1 = ""
 
     console.log("_________v_id__" + req.vendor_id)
     // console.log(req.file)
     // console.log(req.file.filename)
     if (req.file == undefined || req.file == '') {
         var image = "no image"
-        srt_user = 'UPDATE `vendor` SET `owner_name`="' + owner_name + '",`shop_name`="' + shop_name + '",`email`="' + email + '",`mobile`="' + mobile + '",`shop_address`="' + shop_address + '",`gstn`="' + gstn + '",`geolocation`="' + geolocation + '",`availability`="' + availability + '" WHERE vendor_id = "' + req.vendor_id + '"'
+        srt_user = 'UPDATE `vendor` SET `owner_name`="' + owner_name + '",`shop_name`="' + shop_name + '",`mobile`="' + mobile + '",`shop_address`="' + shop_address + '",`gstn`="' + gstn + '",`geolocation`="' + geolocation + '",`availability`="' + availability + '" '
     } else {
         var image = "http://192.168.29.109:8888/vendor_shop_img/" + req.file.filename;
         //console.log(image)
-        srt_user = 'UPDATE `vendor` SET `owner_name`="' + owner_name + '",`shop_name`="' + shop_name + '",`email`="' + email + '",`mobile`="' + mobile + '",`shop_address`="' + shop_address + '",`gstn`="' + gstn + '",`geolocation`="' + geolocation + '",`shop_logo`="' + image + '",`availability`="' + availability + '" WHERE vendor_id = "' + req.vendor_id + '"'
+        srt_user = 'UPDATE `vendor` SET `owner_name`="' + owner_name + '",`shop_name`="' + shop_name + '",`mobile`="' + mobile + '",`shop_address`="' + shop_address + '",`gstn`="' + gstn + '",`geolocation`="' + geolocation + '",`shop_logo`="' + image + '",`availability`="' + availability + '"'
     }
-    console.log(req.vendor_id)
+    if (req.headers.admin_token != "" && req.headers.admin_token != undefined) {
+        srt_user += ' WHERE vendor_id = "' + req.body.vendor_id + '"'
+        srt_user1 = "select * from vendor where vendor_id ='" + req.body.vendor_id + "' "
+    } else if (req.headers.vendor_token != "" && req.headers.vendor_token != undefined) {
+        srt_user += ' WHERE vendor_id = "' + req.vendor_id + '"'
+        srt_user1 = "select * from vendor where vendor_id ='" + req.vendor_id + "' "
+    } else {
+        srt_user = ""
+    }
+
+    console.log(srt_user)
     connection.query(srt_user, (err, rows) => {
         if (err) {
             console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "success": false });
         } else {
 
-            connection.query("select * from vendor where vendor_id ='" + req.vendor_id + "' ", (err, rows) => {
+            connection.query(srt_user1, (err, rows) => {
                 if (err) {
                     console.log(err)
                 } else {
@@ -371,15 +382,16 @@ export async function admin_add_vendor(req, res) {
     // console.log(req.file.filename)
     if (req.file == undefined || req.file == '') {
         var image = "no image"
-        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`availability`, `created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + availability + ',"' + req.created_by + '","' + req.created_by_id + '"")'
+        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`availability`, `created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + availability + '","admin","' + req.created_by_id + '")'
     } else {
         var image = "http://192.168.29.109:8888/vendor_shop_img/" + req.file.filename;
         //console.log(image)
-        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`shop_logo`,`availability`,`created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + image + '","' + availability + ',"' + req.created_by + '","' + req.created_by_id + '"")'
+        srt_user = 'INSERT INTO `vendor` (`owner_name`,`shop_name`,`email`,`mobile`,`shop_address`,`gstn`,`geolocation`,`shop_logo`,`availability`,`created_by`,`created_by_id`) VALUES ("' + owner_name + '","' + shop_name + '","' + email + '","' + mobile + '","' + shop_address + '","' + gstn + '","' + geolocation + '","' + image + '","' + availability + '","admin","' + req.created_by_id + '")'
     }
-    console.log(req.vendor_id)
+    console.log(srt_user)
     connection.query(srt_user, (err, rows) => {
         if (err) {
+            console.log(err)
             res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "something went wrong", "success": false });
         } else {
             res.status(StatusCodes.OK).json({ message: "add vendor successfully", "success": true });

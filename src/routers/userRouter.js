@@ -11,7 +11,7 @@ import {
   user_details,
   change_user_password,
   user_forgate_password,
-  admin_login, user_forgate_password_update,
+  user_forgate_password_update,
   set_notification_token
 } from "../controllers/userController.js";
 import { auth_user, fetch_user, admin_auth } from '../../middleware/auth.js'
@@ -62,7 +62,7 @@ userRouter.post("/user_forgate_password", user_forgate_password);
 userRouter.post("/user_forgate_password_update", auth_user, user_forgate_password_update);
 userRouter.put("/set_notification_token", auth_user, set_notification_token);
 
-userRouter.post("/admin_login", admin_login);
+// userRouter.post("/admin_login", admin_login);
 
 
 
