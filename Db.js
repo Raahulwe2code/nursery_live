@@ -7,7 +7,7 @@ const connection = mysql.createConnection({
   host: "localhost",
   user: "we2code",
   password: "we2code",
-  database: "nurseryDB",
+  database: "nurseryDB_verient",
 });
 
 connection.connect((error) => {
