@@ -168,11 +168,12 @@ export async function delete_product(req, res) {
 }
 
 export async function search_product(req, res) {
+  var count_rows;
   var { price_from, price_to } = req.body;
   console.log(req.body)
   // 'SELECT *, (SELECT id FROM cart WHERE cart.product_id = product.id AND user_id = "' + req.user + '") FROM products  AND '
 
-
+  var search_string_asc_desc = ""
   // var query_string = "select * from product  where ";
   let search_obj = Object.keys(req.body)
   console.log(req.user_id)
@@ -195,27 +196,35 @@ export async function search_product(req, res) {
     search_string += '(`price` BETWEEN "' + price_from + '" AND "' + price_to + '") AND   '
   }
 
-  for (var i = 3; i <= search_obj.length - 1; i++) {
+  for (var i = 0; i <= search_obj.length - 1; i++) {
 
-    if (i == 3) {
-      if (req.body[search_obj[i]] != "") {
-        search_string += `name LIKE "%${req.body[search_obj[i]]}%" AND   `
+    if (i >= 6) {
+      if (i == 6) {
+        if (req.body[search_obj[i]] != "") {
+          search_string += `name LIKE "%${req.body[search_obj[i]]}%" AND   `
+        }
+      } else {
+        if (req.body[search_obj[i]] != "") {
+          var arr = JSON.stringify(req.body[search_obj[i]]);
+          var abc = "'" + arr + "'"
+          const id = abc.substring(abc.lastIndexOf("'[") + 2, abc.indexOf("]'"));
+          search_string += ' ' + search_obj[i] + ' IN ' + '(' + id + ') AND   '
+
+          // search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
+        }
       }
     } else {
-      if (req.body[search_obj[i]] != "") {
-        var arr = JSON.stringify(req.body[search_obj[i]]);
-        var abc = "'" + arr + "'"
-        const id = abc.substring(abc.lastIndexOf("'[") + 2, abc.indexOf("]'"));
-        search_string += ' ' + search_obj[i] + ' IN ' + '(' + id + ') AND   '
-
-        // search_string+= `${search_obj[i]} = "${req.body[search_obj[i]]}" AND   `
+      if (i > 1) {
+        if (search_obj[i] != undefined && req.body[search_obj[i]] != "") {
+          search_string_asc_desc = ` ORDER BY ${search_obj[i].replace("__", "")} ${req.body[search_obj[i]]} `
+        }
       }
     }
     if (i === search_obj.length - 1) {
       search_string = search_string.substring(0, search_string.length - 6);
-      if (search_obj[2] != undefined && req.body[search_obj[2]] != "") {
-        search_string += ` ORDER BY ${search_obj[2]} ${req.body[search_obj[2]]} `
-      }
+      // if (search_obj[2] != undefined && req.body[search_obj[2]] != "") {
+      search_string += search_string_asc_desc
+      // }
 
     }
   }
@@ -237,6 +246,20 @@ export async function search_product(req, res) {
       } else {
         numRows = results[0].numRows;
         numPages = Math.ceil(numRows / numPerPage);
+
+        console.log("results--------------------count----query---------------")
+        console.log(search_string.replace("*", "count(*) AS `count_rows` "))
+        connection.query(search_string.replace("*", "count(*) AS `count_rows` "),
+          (err, results) => {
+            console.log("results--------------------count-------------------")
+            console.log(err)
+            console.log(results)
+            try { count_rows = results[0]["count_rows"] } catch (e) {
+              console.log(e)
+            }
+
+          })
+
         console.log("" + search_string + " LIMIT " + limit + "")
         connection.query("" + search_string + " LIMIT " + limit + "",
           (err, results) => {
@@ -251,6 +274,7 @@ export async function search_product(req, res) {
               };
               if (page < numPages) {
                 responsePayload.pagination = {
+                  count_rows: count_rows,
                   current: page,
                   perPage: numPerPage,
                   previous: page > 0 ? page - 1 : undefined,
