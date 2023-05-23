@@ -2,14 +2,14 @@ import connection from "../../Db.js";
 import { StatusCodes } from "http-status-codes";
 
 export async function add_to_cart(req, res) {
-  var { product_id, cart_product_quantity } = req.body;
+  var { product_id, product_verient_id, cart_product_quantity } = req.body;
   const check = parseInt(cart_product_quantity)
   console.log(req.body)
   console.log(check < 1)
   if (check == "0") {
     res.status(200).send({ "success": false, "response": "please cart quantity add greater then 1" })
   } else {
-    connection.query("SELECT * FROM cart WHERE user_id =" + req.user_id + " AND product_id = " + product_id + " ",
+    connection.query("SELECT * FROM cart WHERE user_id =" + req.user_id + " AND product_id = " + product_id + " AND product_verient_id=" + product_verient_id + "",
       (err, rows) => {
         if (err) {
           console.log("err---------------------13-----")
@@ -20,7 +20,7 @@ export async function add_to_cart(req, res) {
         } else {
           if (rows != "") {
             connection.query(
-              "update cart set cart_product_quantity='" + cart_product_quantity + "' where user_id='" + req.user_id + "' AND product_id='" + product_id + "'", (err, rows) => {
+              "update cart set cart_product_quantity='" + cart_product_quantity + "' where user_id='" + req.user_id + "' AND product_id='" + product_id + "' AND product_verient_id='" + product_verient_id + "'", (err, rows) => {
                 if (err) {
                   console.log("err---------------------21-----")
                   console.log(err)
@@ -34,10 +34,12 @@ export async function add_to_cart(req, res) {
             );
           } else {
             connection.query(
-              "insert into cart (`user_id`, `product_id`,`cart_product_quantity` )  VALUES ('" +
+              "insert into cart (`user_id`, `product_id`,`product_verient_id`,`cart_product_quantity` )  VALUES ('" +
               req.user_id +
               "', '" +
               product_id +
+              "', '" +
+              product_verient_id +
               "','" +
               cart_product_quantity +
               "')",
@@ -129,9 +131,9 @@ export async function cart_update(req, res) {
 }
 
 export async function cart_delete(req, res) {
-  const { product_id } = req.body
+  const { product_id, product_verient_id } = req.body
 
-  connection.query("delete from cart where product_id ='" + product_id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
+  connection.query("delete from cart where product_id ='" + product_id + "' AND product_verient_id='" + product_verient_id + "' AND user_id='" + req.user_id + "'", (err, rows) => {
     if (err) {
       console.log(err)
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ "response": "delete opration failed", "success": false });

@@ -7,3 +7,33 @@
 
 
 // select *,(SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id) AS all_images_url, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_id = cart_view_1.product_id AND image_position = "cover" group by product_images.product_id) AS cover_image from cart_view_1 where user_id="19"
+
+// commoun_table                                   verient_table
+
+// id                                             brand
+// vendor_id                                      quantity
+// name                                           unit
+// seo_tag
+//                                                product_stock_quantity     
+//                                                price       
+//                                                mrp       
+//                                                gst         
+//                                                sgst       
+//                                                cgst        
+// category                                       height        
+//                                                width        
+
+// is_deleted                                     varient_is_deleted
+// status                                         varient_status
+// review
+// discount
+// rating
+// description                                    varient_description
+// is_active                                      verient_is_active
+// created_by
+// created_by_id
+// created_on                                     verient_created_on
+// updated_on                                     verient_updated_on
+
+
+// CREATE VIEW product_view AS SELECT *, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_verient_id = product_verient.product_id AND image_position = 'cover' group by product_verient_id) as all_images, (SELECT GROUP_CONCAT(product_image_path) FROM product_images WHERE product_images.product_verient_id = product_verient.product_id group by product_verient_id) as cover_image FROM product, product_verient WHERE product.id = product_verient.product_id
